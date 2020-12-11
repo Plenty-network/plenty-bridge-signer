@@ -1,0 +1,15 @@
+source https://api.nuget.org/v3/index.json
+source https://nuget.pkg.github.com/bender-labs/index.json
+
+
+nuget Nichelson
+nuget FSharp.Core
+nuget Microsoft.Extensions.Hosting 5.0.0
+nuget Microsoft.Extensions.Hosting.WindowsServices 3.1.9
+nuget System.Net.NameResolution 4.3.0
+nuget FsUnit.xUnit
+nuget Microsoft.NET.Test.Sdk
+nuget xunit.runner.visualstudio
+nuget Netezos.Keys
+nuget Netezos.Ledger
+nuget HidSharp

@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{38B4EE94-87D5-4538-B5B7-931220FD1D4B}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Signer.Service", "Signer.Service\Signer.Service.fsproj", "{CF7B249E-95D3-4FA1-9524-87CA4DF316CC}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Signer.Test", "Signer.Test\Signer.Test.fsproj", "{C5050696-F64C-4901-9E10-46729C2C215A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ledger", "Ledger\Ledger.csproj", "{0A7853B4-E756-4087-87A3-80E99A25A051}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CF7B249E-95D3-4FA1-9524-87CA4DF316CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF7B249E-95D3-4FA1-9524-87CA4DF316CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF7B249E-95D3-4FA1-9524-87CA4DF316CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF7B249E-95D3-4FA1-9524-87CA4DF316CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5050696-F64C-4901-9E10-46729C2C215A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5050696-F64C-4901-9E10-46729C2C215A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5050696-F64C-4901-9E10-46729C2C215A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5050696-F64C-4901-9E10-46729C2C215A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A7853B4-E756-4087-87A3-80E99A25A051}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A7853B4-E756-4087-87A3-80E99A25A051}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A7853B4-E756-4087-87A3-80E99A25A051}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A7853B4-E756-4087-87A3-80E99A25A051}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
