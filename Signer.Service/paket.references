@@ -1,9 +1,5 @@
 Microsoft.Extensions.Hosting
 Microsoft.Extensions.Hosting.WindowsServices
 System.Net.NameResolution
+TzWatch.Lib
 FSharp.Core
-Nichelson
-FsUnit.xUnit
-Microsoft.NET.Test.Sdk
-xunit.runner.visualstudio
-Netezos.Keys

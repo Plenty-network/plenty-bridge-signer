@@ -57,7 +57,7 @@ let ``Should sign with ledger``() = async {
     let buffer = Array.concat [|Hex.Parse("05"); payload|]
     
     
-    let! signature = ledger.Sign(buffer) |> Async.AwaitTask
+    let! signature = ledger.Sign(payload) |> Async.AwaitTask
     
     signature.ToBase58() |> should equal "edsigtmn1obykPqt74tbCzypKzuqvJ4ydRNjRRvh5i8VhyceaTLoLb9Bgq8NW4GEUv7LkHu8NHV4wm355VN1V1L3X9Tngnx3MxG"
 }
