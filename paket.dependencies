@@ -14,3 +14,4 @@ nuget xunit.runner.visualstudio
 nuget Netezos.Keys
 nuget Netezos.Ledger
 nuget HidSharp
+nuget Nethereum.Web3 3.8.0

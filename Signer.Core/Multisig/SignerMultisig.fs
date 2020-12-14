@@ -6,7 +6,7 @@ open Nichelson.Contract
 open Nichelson.Contract.Arg
 open Netezos.Keys
 
-type MintParametes =
+type MintParameters =
     { Amount: int64
       Owner: TezosAddress.T
       TokenId: string
