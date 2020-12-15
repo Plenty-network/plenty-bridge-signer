@@ -5,8 +5,9 @@
     <UserSecretsId>dotnet-Signer.Service-AA0B3D7F-120F-48AA-8B70-2BC389215B0F</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Ethereum\Contract.fs" />
     <Compile Include="Ethereum\Watcher.fs" />
-    <Compile Include="Worker.fs" />
+    <Compile Include="EthereumPipeline.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

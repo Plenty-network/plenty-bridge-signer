@@ -1,17 +1,15 @@
 namespace Signer.Service
 
-open System
-open System.Collections.Generic
-open System.Linq
-open System.Threading.Tasks
-open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
+open Signer.Pipeline.Ethereum
 
 module Program =
     let createHostBuilder args =
-        Host.CreateDefaultBuilder(args)
+        Host
+            .CreateDefaultBuilder(args)
             .ConfigureServices(fun hostContext services ->
-                services.AddHostedService<Worker>() |> ignore)
+                services.AddEthereumPipeline(hostContext.Configuration)
+                |> ignore)
 
     [<EntryPoint>]
     let main args =
