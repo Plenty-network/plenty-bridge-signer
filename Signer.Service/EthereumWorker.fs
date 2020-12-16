@@ -7,14 +7,45 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
+open Netezos.Keys
 open Nethereum.Web3
+open Nichelson
+open Signer.Core
 open Signer.Ethereum
+open Signer.Tezos
 
+let words =
+    [ "negative"
+      "shoe"
+      "enlist"
+      "emotion"
+      "monkey"
+      "sell"
+      "increase"
+      "toddler"
+      "grace"
+      "noise"
+      "tree"
+      "perfect"
+      "regular"
+      "nothing"
+      "stadium" ]
 
-[<CLIMutable>]
+let key =
+    Key.FromMnemonic(Mnemonic.Parse(words), "vespwozi.vztxobwc@tezos.example.org", "")
+
+let multisig = "KT1MsooZb43dWi5GpHLeoYw5gyXj9viUuMcE"
+
+let benderContract =
+    "KT1VUNmGa1JYJuNxNS4XDzwpsc9N1gpcCBN2%signer"
+
+let target =
+    { MultisigContract = TezosAddress.FromString multisig
+      BenderContract = TezosAddress.FromString(benderContract)
+      ChainId = "NetXm8tYqnMWky1" }
+
 type NodeConfiguration = { Endpoint: string; Wait: int }
 
-[<CLIMutable>]
 type EthereumConfiguration =
     { Node: NodeConfiguration
       Contract: string }
@@ -25,18 +56,26 @@ type EthereumWorker(logger: ILogger<EthereumWorker>, configuration: EthereumConf
     override _.ExecuteAsync(ct: CancellationToken) =
         let ep = configuration.Node.Endpoint
         let web3 = Web3(ep)
-        let startingBlock = 7723438I
+        let startingBlock = 7730829I
+        let signer = Signer.memorySigner key
+
+        let apply =
+            Signer.Core.Mint.processEvent signer target
 
         Watcher.watchFor
             web3
             { Contract = configuration.Contract
               Wait = configuration.Node.Wait
               From = startingBlock }
-        |> AsyncSeq.iter (fun e ->
-            ()
+        |> AsyncSeq.iterAsync (fun e ->
+            async {
+                let! r = apply e
 
-            logger.LogInformation
-                ("event {hash} {from} {to} {value}", e.Log.TransactionHash, e.Event.From, e.Event.To, e.Event.Value))
+                match r with
+                | Ok s -> logger.LogInformation("Signature {s}", s.ToBase58())
+                | Error err -> logger.LogError err
+            })
+
         |> (fun a -> Async.StartAsTask(a, cancellationToken = ct)) :> Task // need to convert into the parameter-less task
 
 type IServiceCollection with

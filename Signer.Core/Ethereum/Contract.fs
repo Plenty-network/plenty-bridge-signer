@@ -2,8 +2,6 @@ module Signer.Ethereum.Contract
 
 open System.Numerics
 open Nethereum.ABI.FunctionEncoding.Attributes
-open Nichelson
-
 
 [<Event("Transfer")>]
 type TransferEventDto(_from: string, _to: string, _value: BigInteger, _tezosAddress: string) =

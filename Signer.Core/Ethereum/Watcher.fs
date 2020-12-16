@@ -7,6 +7,7 @@ open Nethereum.Hex.HexTypes
 open Nethereum.Web3
 open FSharpx.Control
 
+
 module Watcher =
 
     type WatchParameters =
@@ -29,9 +30,8 @@ module Watcher =
                     web3.Eth.Blocks.GetBlockNumber.SendRequestAsync()
                     |> Async.AwaitTask
                     |> Async.map (fun v -> v.Value)
-
+            
                 let maxBlock = lastBlock - (wait |> bigint)
-
                 if maxBlock <= next then
                     do! Async.Sleep 1000
                     yield! loop lastPolled

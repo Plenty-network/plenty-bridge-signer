@@ -4,7 +4,13 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Multisig\SignerMultisig.fs" />
+    <Compile Include="Result.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="Tezos\Multisig.fs" />
+    <Compile Include="Tezos\Signer.fs" />
+    <Compile Include="Ethereum\Contract.fs" />
+    <Compile Include="Ethereum\Watcher.fs" />
+    <Compile Include="Mint\Workflow.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ledger\Ledger.csproj" />

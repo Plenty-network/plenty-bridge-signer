@@ -3,5 +3,4 @@ Microsoft.Extensions.Hosting.WindowsServices
 System.Net.NameResolution
 TzWatch.Lib
 FSharp.Core
-Nethereum.Web3
 FSharpx.Extras
