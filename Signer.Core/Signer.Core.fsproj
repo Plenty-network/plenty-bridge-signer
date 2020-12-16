@@ -6,6 +6,7 @@
   <ItemGroup>
     <Compile Include="Result.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="Json.fs" />
     <Compile Include="Tezos\Multisig.fs" />
     <Compile Include="Tezos\Signer.fs" />
     <Compile Include="Ethereum\Contract.fs" />

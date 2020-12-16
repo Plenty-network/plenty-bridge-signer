@@ -10,7 +10,7 @@ open Microsoft.Extensions.Logging
 open Netezos.Keys
 open Nethereum.Web3
 open Nichelson
-open Signer.Core
+open Signer
 open Signer.Ethereum
 open Signer.Tezos
 
@@ -59,7 +59,7 @@ type EthereumWorker(logger: ILogger<EthereumWorker>, configuration: EthereumConf
         let startingBlock = 7730829I
         let signer = Signer.memorySigner key
 
-        let apply = Mint.processEvent signer target
+        let apply = Mint.workflow signer target
         Watcher.watchFor
             web3
             { Contract = configuration.Contract
@@ -70,7 +70,7 @@ type EthereumWorker(logger: ILogger<EthereumWorker>, configuration: EthereumConf
                 let! r = apply e
 
                 match r with
-                | Ok s -> logger.LogInformation("Signature {s}", s.ToBase58())
+                | Ok {Name = name; Content = content} -> logger.LogInformation("File {s} Content {c}", name, content)
                 | Error err -> logger.LogError err
             })
 

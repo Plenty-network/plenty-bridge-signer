@@ -1,8 +1,8 @@
 namespace Signer.Tezos
 
+open Signer
 open Netezos.Keys
 open Netezos.Ledger
-open Signer.Core
 
 module Signer =
     let memorySigner (k: Key): Signer =
