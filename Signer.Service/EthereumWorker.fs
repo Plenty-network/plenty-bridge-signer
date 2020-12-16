@@ -59,9 +59,7 @@ type EthereumWorker(logger: ILogger<EthereumWorker>, configuration: EthereumConf
         let startingBlock = 7730829I
         let signer = Signer.memorySigner key
 
-        let apply =
-            Signer.Core.Mint.processEvent signer target
-
+        let apply = Mint.processEvent signer target
         Watcher.watchFor
             web3
             { Contract = configuration.Contract
@@ -76,7 +74,7 @@ type EthereumWorker(logger: ILogger<EthereumWorker>, configuration: EthereumConf
                 | Error err -> logger.LogError err
             })
 
-        |> (fun a -> Async.StartAsTask(a, cancellationToken = ct)) :> Task // need to convert into the parameter-less task
+        |> (fun a -> Async.StartAsTask(a, cancellationToken = ct)) :> Task
 
 type IServiceCollection with
     member this.AddEthereumPipeline(configuration: IConfiguration) =

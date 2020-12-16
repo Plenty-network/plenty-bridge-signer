@@ -14,6 +14,6 @@ let processEvent (signer: Signer) (target: MintTarget) (e: EventLog<TransferEven
               TokenId = e.Log.Address
               TxId = e.Log.TransactionHash }
 
-        let payload = Multisig.pack target mint
+        let! payload = Multisig.pack target mint |> AsyncResult.ofResult
         return! signer payload
     }

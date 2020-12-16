@@ -1,5 +1,6 @@
 namespace Signer.Tezos
 
+open FParsec
 open Nichelson
 open Nichelson.Contract
 open Nichelson.Contract.Arg
@@ -45,19 +46,21 @@ module Multisig =
                 TokenId = tokenId
                 TxId = txId })
              =
-        let mint =
-            Record [ ("%amount", IntArg(amount))
-                     ("%owner", AddressArg owner)
-                     ("%token_id", StringArg tokenId)
-                     ("%tx_id", StringArg txId) ]
+        try
+            let mint =
+                Record [ ("%amount", IntArg(amount))
+                         ("%owner", AddressArg owner)
+                         ("%token_id", StringArg tokenId)
+                         ("%tx_id", StringArg txId) ]
 
-        let value =
-            paramsType.Instantiate
-                (Tuple [ StringArg chainId
-                         AddressArg multisig
-                         IntArg 0I
-                         Record [ ("%signer_operation",
-                                   Record [ ("%mint_token", mint)
-                                            ("%target", AddressArg benderContract) ]) ] ])
+            let value =
+                paramsType.Instantiate
+                    (Tuple [ StringArg chainId
+                             AddressArg multisig
+                             IntArg 0I
+                             Record [ ("%signer_operation",
+                                       Record [ ("%mint_token", mint)
+                                                ("%target", AddressArg benderContract) ]) ] ])
 
-        Encoder.pack value
+            Result.Ok(Encoder.pack value)
+        with err -> Result.Error err.Message
