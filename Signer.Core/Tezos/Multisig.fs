@@ -5,13 +5,13 @@ open Nichelson
 open Nichelson.Contract
 open Nichelson.Contract.Arg
 
-type MintParameters =
+type MintingParameters =
     { Amount: bigint
       Owner: TezosAddress.T
       TokenId: string
       TxId: string }
 
-type MintTarget =
+type MintingTarget =
     { MultisigContract: TezosAddress.T
       BenderContract: TezosAddress.T
       ChainId: string }

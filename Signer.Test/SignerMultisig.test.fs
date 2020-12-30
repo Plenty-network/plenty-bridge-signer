@@ -6,6 +6,7 @@ open Nichelson
 open FsUnit.Xunit
 open Xunit
 open Signer.Tezos
+open Signer
 
 let multisig = "KT1MsooZb43dWi5GpHLeoYw5gyXj9viUuMcE"
 let fa2Contract = "KT1LL3X5FcnUji8MVVWdi8bsjDATWqVvDgCB"
@@ -32,29 +33,35 @@ let key =
 [<Fact>]
 let ``should pack`` () =
 
-    let v = Multisig.pack target mint
+    let v =
+        Multisig.pack target mint
+        |> Result.map (Encoder.byteToHex)
 
-    v
-    |> Encoder.byteToHex
-    |> should
-        equal
-           "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c9400070700000508070705080707070700a4010a00000016000046f146853a32c121cfdcd4f446876ae36c4afc580707010000000f636f6e74726163745f6f6e5f6574680100000004747849640a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e6572"
+    match v with
+    | Ok v ->
+        v
+        |> should
+            equal
+               "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c9400070700000508070705080707070700a4010a00000016000046f146853a32c121cfdcd4f446876ae36c4afc580707010000000f636f6e74726163745f6f6e5f6574680100000004747849640a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e6572"
+    | Error err -> failwith err
 
 [<Fact>]
 let ``Should sign`` () =
     async {
         let sign = Signer.memorySigner key
-        let payload = Multisig.pack target mint
 
-        let! signature = sign payload
-        
+        let! signature =
+            Multisig.pack target mint
+            |> AsyncResult.ofResult
+            |> AsyncResult.bind sign
+
         let signature =
             match signature with
             | Ok v -> v
             | Error err -> failwith err
-        
+
         signature
-        |> Signer.Core.Signature.toBase58
+        |> (fun e -> e.ToBase58())
         |> should
             equal
                "edsigtvcit3FoxW4q7jatc84AJxs77kEnXRkpQwD8if31X6SGU8u4R6QXQBFVw3gUY7C99pW5QNXoCAe4dMHcrrerXjujG2fide"
@@ -73,6 +80,11 @@ let ``Should talk to ledger`` () =
 let ``Should sign with ledger`` () =
     async {
         let payload = Multisig.pack target mint
+        let payload =
+            match payload with
+            | Ok v -> v
+            | Error err -> failwith err
+
         let! ledger = Ledger.Client.get () |> Async.AwaitTask
 
         let buffer =

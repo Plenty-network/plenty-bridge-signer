@@ -59,7 +59,7 @@ type EthereumWorker(logger: ILogger<EthereumWorker>, configuration: EthereumConf
         let startingBlock = 7730829I
         let signer = Signer.memorySigner key
 
-        let apply = Mint.workflow signer target
+        let apply = Minting.workflow signer target
         Watcher.watchFor
             web3
             { Contract = configuration.Contract
@@ -70,7 +70,8 @@ type EthereumWorker(logger: ILogger<EthereumWorker>, configuration: EthereumConf
                 let! r = apply e
 
                 match r with
-                | Ok {Name = name; Content = content} -> logger.LogInformation("File {s} Content {c}", name, content)
+                | Ok (MintingSigned ({ Proof = { Signature = s } })) ->
+                    logger.LogInformation("Signature {s} Content {c}", s)
                 | Error err -> logger.LogError err
             })
 

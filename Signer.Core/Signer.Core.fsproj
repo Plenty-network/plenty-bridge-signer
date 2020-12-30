@@ -11,7 +11,10 @@
     <Compile Include="Tezos\Signer.fs" />
     <Compile Include="Ethereum\Contract.fs" />
     <Compile Include="Ethereum\Watcher.fs" />
-    <Compile Include="Mint\Workflow.fs" />
+    <Compile Include="Minting\Workflow.fs" />
+    <Compile Include="Infrastructure\IPFS\Types.fs" />
+    <Compile Include="Infrastructure\IPFS\IpfsClient.fs" />
+    <Compile Include="Infrastructure\EventStore\EventStoreIpfs.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ledger\Ledger.csproj" />
