@@ -12,6 +12,9 @@ open Nethereum.Web3
 open Nichelson
 open Signer
 open Signer.Ethereum
+open Signer.EventStore
+open Signer.IPFS
+open Signer.State.RocksDb
 open Signer.Tezos
 
 let words =
@@ -50,31 +53,38 @@ type EthereumConfiguration =
     { Node: NodeConfiguration
       Contract: string }
 
-type EthereumWorker(logger: ILogger<EthereumWorker>, configuration: EthereumConfiguration) =
+type EthereumWorker(logger: ILogger<EthereumWorker>, configuration: EthereumConfiguration, state: StateRocksDb) =
     inherit BackgroundService()
 
+
     override _.ExecuteAsync(ct: CancellationToken) =
-        let ep = configuration.Node.Endpoint
-        let web3 = Web3(ep)
-        let startingBlock = 7730829I
-        let signer = Signer.memorySigner key
+        EventStoreIpfs.Create(IpfsClient("http://localhost:5001"), "bender", state.GetHead())
+        |> AsyncResult.bind (fun store ->
+            let ep = configuration.Node.Endpoint
+            let web3 = Web3(ep)
+            let startingBlock = 7813092I
+            let signer = Signer.memorySigner key
 
-        let apply = Minting.workflow signer target
-        Watcher.watchFor
-            web3
-            { Contract = configuration.Contract
-              Wait = configuration.Node.Wait
-              From = startingBlock }
-        |> AsyncSeq.iterAsync (fun e ->
-            async {
-                let! r = apply e
+            let apply =
+                Minting.workflow signer store.Append target
 
-                match r with
-                | Ok (MintingSigned ({ Proof = { Signature = s } })) ->
-                    logger.LogInformation("Signature {s} Content {c}", s)
-                | Error err -> logger.LogError err
-            })
+            Watcher.watchFor
+                web3
+                { Contract = configuration.Contract
+                  Wait = configuration.Node.Wait
+                  From = startingBlock }
+            |> AsyncSeq.iterAsync (fun e ->
+                async {
+                    let! r = apply e
 
+                    match r with
+                    | Ok (_, MintingSigned ({ Proof = { Signature = s } })) ->
+                        logger.LogInformation("Signature {s}", s)
+                    | Error err -> logger.LogError err
+                })
+            |> Async.RunSynchronously
+
+            AsyncResult.retn ())
         |> (fun a -> Async.StartAsTask(a, cancellationToken = ct)) :> Task
 
 type IServiceCollection with
@@ -85,7 +95,6 @@ type IServiceCollection with
                   { Endpoint = configuration.["Ethereum:Node:Endpoint"]
                     Wait = configuration.GetValue<int>("Ethereum:Node:Wait") } }
 
-        this.AddSingleton<EthereumConfiguration>(ethereumConfiguration)
-        |> ignore
-
-        this.AddHostedService<EthereumWorker>() |> ignore
+        this
+            .AddSingleton<EthereumConfiguration>(ethereumConfiguration)
+            .AddHostedService<EthereumWorker>()

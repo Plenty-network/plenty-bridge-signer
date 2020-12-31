@@ -6,6 +6,7 @@
   <ItemGroup>
     <Compile Include="SignerMultisig.test.fs" />
     <Compile Include="Ipfs.Test.fs" />
+    <Compile Include="State.Test.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Signer.Service\Signer.Service.fsproj" />

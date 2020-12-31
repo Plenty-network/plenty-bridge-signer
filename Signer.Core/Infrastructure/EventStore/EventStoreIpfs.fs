@@ -8,7 +8,7 @@ type private Message = Append of DomainEvent * AsyncReplyChannel<EventId>
 
 type Append<'e> = 'e -> Async<EventId>
 
-type private MintingSignedDto =
+type MintingSignedDto =
     { level: string
       proof: ProofDto
       quorum: QuorumDto }
@@ -26,13 +26,13 @@ and QuorumDto =
       chainId: string }
 
 
-type EventStoreIpfs(client: IpfsClient, head: Cid) =
+type EventStoreIpfs(client: IpfsClient, head: Cid option, key: IpfsKey) =
     let serialize =
         function
         | MintingSigned { Level = level
                           Proof = proof
                           Quorum = quorum } ->
-            let payload = 
+            let payload =
                 { level = level.ToString()
                   proof =
                       { amount = proof.Amount.ToString()
@@ -45,42 +45,57 @@ type EventStoreIpfs(client: IpfsClient, head: Cid) =
                         minterContract = quorum.MinterContract
                         chainId = quorum.ChainId } }
                 |> JObject.FromObject
-            let result =  JObject()
+
+            let result = JObject()
             result.["type"] <- JValue("MintingSigned")
             result.["payload"] <- payload
             result
-            
+
     let link (Cid value) =
-            let link = JObject()
-            link.Add("/", JValue(value))
-            link
+        let link = JObject()
+        link.Add("/", JValue(value))
+        link
+
+    let append event (head: Cid option) =
+        asyncResult {
+            let payload = serialize event
+            if head.IsSome then payload.["parent"] <- link head.Value
+
+            let! cid = client.Dag.PutDag(payload)
+            let! _ = client.Name.Publish(cid, key = key.Name)
+            return cid
+        }
 
     let mailbox =
         MailboxProcessor.Start(fun inbox ->
-            let rec messageLoop (head: Cid) =
+            let rec messageLoop (head: Cid option) =
                 async {
                     let! message = inbox.Receive()
 
                     match message with
                     | Append (e, rc) ->
-                        let payload = serialize e
-                        payload.["parent"] <- link head
-                        let! cid = client.Dag.PutDag(payload)
-                        // todo : ipns
-                        match cid with
-                        | Ok value -> 
-                            rc.Reply (EventId 10UL)
-                            return! messageLoop(value)
-                        | Error err -> failwith err     
+                        let! result = append e head
+
+                        match result with
+                        | Ok value ->
+                            rc.Reply(EventId 10UL)
+                            do! messageLoop (Some value)
+                        | Error err -> failwith err
                 }
 
             messageLoop (head))
 
-    static member Create(client: IpfsClient) = async {
-        // todo : fetch head
-        ()
-    }
-    
+    static member Create(client: IpfsClient, keyName: string, head) =
+        asyncResult {
+            let! keys = client.Key.List()
+
+            let! key =
+                keys
+                |> Seq.tryFind (fun k -> k.Name = keyName)
+                |> AsyncResult.ofOption "Key not found"
+            return EventStoreIpfs(client, head, key)
+        }
+
     member this.Append(e: DomainEvent) =
         mailbox.PostAndAsyncReply(fun rc -> Append(e, rc))
-
+        |> Async.map (fun id -> (id, e))

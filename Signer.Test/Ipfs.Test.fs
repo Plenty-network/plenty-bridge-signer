@@ -15,7 +15,7 @@ type Dag() =
             let link = JObject()
             link.Add("/", JValue(v))
             link
-
+            
         async {
             let p =
                 JObject.FromObject
@@ -52,7 +52,7 @@ type Name() =
     [<Fact>]
     let ``Should resolve`` () =
         async {
-            let! r = client.Name.Resolve("k51qzi5uqu5dhuc1pto6x98woksrqgwhq6d1lff2hfymxmlk4qd7vqgtf980yl")
+            let! r = client.Name.Resolve("k51qzi5uqu5dilfdi6xt8tfbw4zmghwewcvvktm7z9fk4ktsx4z7wn0mz2glje")
             match r with
             | Ok v ->
                 v

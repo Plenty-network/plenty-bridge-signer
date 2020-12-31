@@ -366,6 +366,11 @@ module AsyncResult =
 
     /// Lift a Result into an AsyncResult
     let ofResult x: AsyncResult<_, _> = x |> Async.retn
+    
+    let ofOption error x : AsyncResult<_,_> =
+        match x with
+        | Some v -> v |> Result.Ok |> Async.retn
+        | None -> error |> Result.Error |> Async.retn
 
     /// Lift a Async into an AsyncResult
     let ofAsync x: AsyncResult<_, _> = x |> Async.map Result.Ok

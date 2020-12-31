@@ -94,7 +94,7 @@ type Key(client: HttpClient) =
 
 
 type Name(client: HttpClient) =
-    member this.Publish(cid, ?key: string, ?lifetime: string, ?ttl: string) =
+    member this.Publish((Cid cid), ?key: string, ?lifetime: string, ?ttl: string) =
         asyncResult {
             let query = HttpUtility.ParseQueryString ""
             query.["arg"] <- cid

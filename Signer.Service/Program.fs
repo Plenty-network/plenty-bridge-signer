@@ -1,14 +1,30 @@
 namespace Signer.Service
 
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
+open RocksDbSharp
+open Signer.EventStore
 open Signer.Pipeline.Ethereum
+open Signer.State.RocksDb
 
 module Program =
+
+    type IServiceCollection with
+        member this.AddState(configuration: IConfiguration) =
+            let rocksDbPath = configuration.["RocksDB:Path"]
+
+            let db =
+                RocksDb.Open(DbOptions().SetCreateIfMissing(true), rocksDbPath)
+            this.AddSingleton(StateRocksDb(db))
+
     let createHostBuilder args =
         Host
             .CreateDefaultBuilder(args)
             .ConfigureServices(fun hostContext services ->
-                services.AddEthereumPipeline(hostContext.Configuration)
+                services
+                    .AddState(hostContext.Configuration)
+                    .AddEthereumPipeline(hostContext.Configuration)
                 |> ignore)
 
     [<EntryPoint>]

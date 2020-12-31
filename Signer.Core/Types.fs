@@ -30,3 +30,5 @@ and Quorum =
       ChainId: string }
 
 type DomainEvent = MintingSigned of MintingSigned
+
+type Append<'e> = 'e -> Async<EventId * 'e>

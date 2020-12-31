@@ -36,7 +36,7 @@ let private toPayload level (target: MintingTarget) (parameters: MintingParamete
 let private toEvent (payload: MintingSigned) =
     MintingSigned payload |> AsyncResult.ofSuccess
 
-let workflow (signer: Signer) (target: MintingTarget) (event: EventLog<TransferEventDto>) =
+let workflow (signer: Signer) (append: Append<_>) (target: MintingTarget) (event: EventLog<TransferEventDto>) =
     let packAndSign = packAndSign signer target
 
     let toPayload =
@@ -44,9 +44,11 @@ let workflow (signer: Signer) (target: MintingTarget) (event: EventLog<TransferE
         |> AsyncResult.bind
 
     let toEvent = toEvent |> AsyncResult.bind
+    let append = (append >> AsyncResult.ofAsync) |> AsyncResult.bind
 
     event
     |> toMintingParameters
     |> packAndSign
     |> toPayload
     |> toEvent
+    |> append
