@@ -455,3 +455,6 @@ bower_components
 Scripts/
 
 .ionide
+
+### Project related 
+/Signer.Service/data/

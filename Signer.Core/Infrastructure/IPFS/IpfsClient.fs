@@ -131,7 +131,7 @@ type Dag(client: HttpClient) =
             let query = HttpUtility.ParseQueryString ""
             query.["format"] <- defaultArg format "dag-cbor"
             query.["input-enc"] <- defaultArg encoding "json"
-            query.["pin"] <- (defaultArg pin false)
+            query.["pin"] <- (defaultArg pin true)
                 .ToString()
                 .ToLowerInvariant()
 

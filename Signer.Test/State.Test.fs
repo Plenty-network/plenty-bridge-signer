@@ -29,7 +29,8 @@ type ``With a valid db``() =
 
             let actual = state.GetEthereumLevel()
 
-            actual |> should equal (bigint 64))
+            actual.IsSome |> should equal true
+            actual.Value |> should equal (bigint 64))
 
     [<Fact>]
     let ``Should save head`` () =

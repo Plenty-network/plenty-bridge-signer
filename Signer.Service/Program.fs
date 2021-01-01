@@ -4,9 +4,8 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open RocksDbSharp
-open Signer.EventStore
-open Signer.Pipeline.Ethereum
 open Signer.State.RocksDb
+open Signer.Worker.Minting
 
 module Program =
 
@@ -16,7 +15,10 @@ module Program =
 
             let db =
                 RocksDb.Open(DbOptions().SetCreateIfMissing(true), rocksDbPath)
-            this.AddSingleton(StateRocksDb(db))
+
+            this.AddSingleton(new StateRocksDb(db))
+
+        member this.AddSigner(_: IConfiguration) = this.AddHostedService<SignerWorker>()
 
     let createHostBuilder args =
         Host
@@ -24,7 +26,8 @@ module Program =
             .ConfigureServices(fun hostContext services ->
                 services
                     .AddState(hostContext.Configuration)
-                    .AddEthereumPipeline(hostContext.Configuration)
+                    .AddMinter(hostContext.Configuration)
+                    .AddSigner(hostContext.Configuration)
                 |> ignore)
 
     [<EntryPoint>]

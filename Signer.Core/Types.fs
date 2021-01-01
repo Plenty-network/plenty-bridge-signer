@@ -1,6 +1,5 @@
 namespace Signer
 
-open System
 
 type TezosSignature = Netezos.Keys.Signature
 

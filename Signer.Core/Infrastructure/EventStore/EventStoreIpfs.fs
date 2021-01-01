@@ -4,9 +4,9 @@ open Newtonsoft.Json.Linq
 open Signer
 open Signer.IPFS
 
-type private Message = Append of DomainEvent * AsyncReplyChannel<EventId>
-
-type Append<'e> = 'e -> Async<EventId>
+type private Message =
+    | Append of DomainEvent * AsyncReplyChannel<EventId>
+    | Publish of AsyncReplyChannel<string>
 
 type MintingSignedDto =
     { level: string
@@ -60,10 +60,21 @@ type EventStoreIpfs(client: IpfsClient, head: Cid option, key: IpfsKey) =
         asyncResult {
             let payload = serialize event
             if head.IsSome then payload.["parent"] <- link head.Value
-
             let! cid = client.Dag.PutDag(payload)
-            let! _ = client.Name.Publish(cid, key = key.Name)
+            // todo : save head
             return cid
+        }
+
+    let publish (cid) =
+        asyncResult {
+            let r =
+                match cid with
+                | Some v ->
+                    client.Name.Publish(v, key = key.Name)
+                    |> AsyncResult.map (fun v -> v.Name)
+                | None -> AsyncResult.ofSuccess key.Name
+
+            return! r
         }
 
     let mailbox =
@@ -81,6 +92,14 @@ type EventStoreIpfs(client: IpfsClient, head: Cid option, key: IpfsKey) =
                             rc.Reply(EventId 10UL)
                             do! messageLoop (Some value)
                         | Error err -> failwith err
+                    | Publish rc ->
+                        let! result = publish head
+
+                        match result with
+                        | Ok value ->
+                            rc.Reply value
+                            do! messageLoop head
+                        | Error err -> failwith err
                 }
 
             messageLoop (head))
@@ -93,9 +112,13 @@ type EventStoreIpfs(client: IpfsClient, head: Cid option, key: IpfsKey) =
                 keys
                 |> Seq.tryFind (fun k -> k.Name = keyName)
                 |> AsyncResult.ofOption "Key not found"
+
             return EventStoreIpfs(client, head, key)
         }
 
     member this.Append(e: DomainEvent) =
         mailbox.PostAndAsyncReply(fun rc -> Append(e, rc))
         |> Async.map (fun id -> (id, e))
+
+    member this.Publish() =
+        mailbox.PostAndAsyncReply(Publish)

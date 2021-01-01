@@ -19,7 +19,7 @@ let private packAndSign (signer: Signer) (target: MintingTarget) (mint: MintingP
         return (mint, signature)
     }
 
-let private toPayload level (target: MintingTarget) (parameters: MintingParameters, signature: TezosSignature) =
+let private toEvent level (target: MintingTarget) (parameters: MintingParameters, signature: TezosSignature) =
     { Level = level
       Proof =
           { Signature = signature.ToBase58()
@@ -31,24 +31,17 @@ let private toPayload level (target: MintingTarget) (parameters: MintingParamete
           { QuorumContract = TezosAddress.Value(target.MultisigContract)
             MinterContract = TezosAddress.Value(target.BenderContract)
             ChainId = target.ChainId } }
+    |> MintingSigned
     |> AsyncResult.ofSuccess
 
-let private toEvent (payload: MintingSigned) =
-    MintingSigned payload |> AsyncResult.ofSuccess
-
-let workflow (signer: Signer) (append: Append<_>) (target: MintingTarget) (event: EventLog<TransferEventDto>) =
+let workflow (signer: Signer) (target: MintingTarget) (logEvent: EventLog<TransferEventDto>) =
     let packAndSign = packAndSign signer target
 
-    let toPayload =
-        toPayload event.Log.BlockNumber.Value target
+    let toEvent =
+        toEvent logEvent.Log.BlockNumber.Value target
         |> AsyncResult.bind
 
-    let toEvent = toEvent |> AsyncResult.bind
-    let append = (append >> AsyncResult.ofAsync) |> AsyncResult.bind
-
-    event
+    logEvent
     |> toMintingParameters
     |> packAndSign
-    |> toPayload
     |> toEvent
-    |> append
