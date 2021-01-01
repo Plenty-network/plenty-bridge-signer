@@ -1,5 +1,6 @@
 module Signer.Worker.Minting
 
+open System.Threading
 open FSharp.Control
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
@@ -49,7 +50,10 @@ type EthereumConfiguration =
     { Node: NodeConfiguration
       Contract: string }
 
-type MinterService(logger: ILogger<MinterService>, web3: Web3, configuration: EthereumConfiguration, state: StateRocksDb) =
+type MinterService(logger: ILogger<MinterService>,
+                   web3: Web3,
+                   configuration: EthereumConfiguration,
+                   state: StateRocksDb) =
 
     member this.Check =
         asyncResult {
@@ -66,41 +70,40 @@ type MinterService(logger: ILogger<MinterService>, web3: Web3, configuration: Et
 
 
     member this.Work(store: EventStoreIpfs) =
-        asyncResult {
-            let startingBlock = defaultArg (state.GetEthereumLevel()) 7813092I
-            logger.LogInformation("Resume ethereum watch at level {}", startingBlock)
-            let signer = Signer.memorySigner key
-            let apply = Minting.workflow signer target
+        let startingBlock =
+            defaultArg (state.GetEthereumLevel()) 7813092I
 
-            Watcher.watchFor
-                web3
-                { Contract = configuration.Contract
-                  Wait = configuration.Node.Wait
-                  From = startingBlock }
-            |> AsyncSeq.bufferByCountAndTime 100 1000
-            |> AsyncSeq.iterAsync (fun e ->
-                async {
-                    let! r = e |> Seq.map apply |> Async.Sequential
+        logger.LogInformation("Resume ethereum watch at level {}", startingBlock)
+        let signer = Signer.memorySigner key
+        let apply = Minting.workflow signer target
 
-                    for result in r do
-                        match result with
-                        | Ok v ->
-                            do! store.Append v |> Async.Ignore
-                            let (MintingSigned { Level = level; Proof = { Signature = signature } }) = v
-                            logger.LogInformation("Signature {s}", signature)
-                            state.PutEthereumLevel(level)
-                        | Error err -> logger.LogError("Error {}", err)
+        Watcher.watchFor
+            web3
+            { Contract = configuration.Contract
+              Wait = configuration.Node.Wait
+              From = startingBlock }
+        |> AsyncSeq.bufferByCountAndTime 100 1000
+        |> AsyncSeq.iterAsync (fun e ->
+            async {
+                let! r = e |> Seq.map apply |> Async.Sequential
 
+                for result in r do
+                    match result with
+                    | Ok v ->
+                        do! store.Append v |> Async.Ignore
 
-                    let! name = store.Publish()
-                    logger.LogInformation("Head published at {addr}", name)
+                        let (MintingSigned { Level = level
+                                             Proof = { TxId = tx } }) =
+                            v
 
-                })
-            |> Async.RunSynchronously
+                        logger.LogDebug("Signed {s}", tx)
+                        state.PutEthereumLevel(level)
+                    | Error err -> logger.LogError("Error {}", err)
 
-            return ()
+                let! name = store.Publish()
+                logger.LogInformation("Head published at {addr}", name)
+            })
 
-        }
 
 
 type IServiceCollection with

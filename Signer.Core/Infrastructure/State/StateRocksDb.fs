@@ -3,6 +3,7 @@ namespace Signer.State
 open System
 open System.Text
 open RocksDbSharp
+open Signer.EventStore
 open Signer.IPFS
 
 module RocksDb =
@@ -14,15 +15,15 @@ module RocksDb =
 
         member this.GetEthereumLevel() =
             let v = db.Get(tezosLevelKey)
-            if v = null then None else Some(bigint(v))
+            if v = null then None else Some(bigint (v))
 
-        member this.PutHead(Cid value) =
-            db.Put(headKey, Encoding.UTF8.GetBytes(value))
+        interface EventStoreState with
+            member this.PutHead(Cid value) =
+                db.Put(headKey, Encoding.UTF8.GetBytes(value))
 
-        member this.GetHead() =
-            let v = db.Get(headKey)
-            if v = null then None else Some(Cid(Encoding.UTF8.GetString(v)))
+            member this.GetHead() =
+                let v = db.Get(headKey)
+                if v = null then None else Some(Cid(Encoding.UTF8.GetString(v)))
 
         interface IDisposable with
             member this.Dispose() = db.Dispose()
-        

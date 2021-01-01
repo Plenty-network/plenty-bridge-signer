@@ -8,6 +8,10 @@ type private Message =
     | Append of DomainEvent * AsyncReplyChannel<EventId>
     | Publish of AsyncReplyChannel<string>
 
+type EventStoreState =
+    abstract PutHead: Cid -> unit
+    abstract GetHead: unit -> Cid option
+
 type MintingSignedDto =
     { level: string
       proof: ProofDto
@@ -26,7 +30,7 @@ and QuorumDto =
       chainId: string }
 
 
-type EventStoreIpfs(client: IpfsClient, head: Cid option, key: IpfsKey) =
+type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
     let serialize =
         function
         | MintingSigned { Level = level
@@ -60,8 +64,9 @@ type EventStoreIpfs(client: IpfsClient, head: Cid option, key: IpfsKey) =
         asyncResult {
             let payload = serialize event
             if head.IsSome then payload.["parent"] <- link head.Value
+
             let! cid = client.Dag.PutDag(payload)
-            // todo : save head
+            state.PutHead cid
             return cid
         }
 
@@ -102,9 +107,9 @@ type EventStoreIpfs(client: IpfsClient, head: Cid option, key: IpfsKey) =
                         | Error err -> failwith err
                 }
 
-            messageLoop (head))
+            messageLoop (state.GetHead()))
 
-    static member Create(client: IpfsClient, keyName: string, head) =
+    static member Create(client: IpfsClient, keyName: string, state: EventStoreState) =
         asyncResult {
             let! keys = client.Key.List()
 
@@ -113,12 +118,11 @@ type EventStoreIpfs(client: IpfsClient, head: Cid option, key: IpfsKey) =
                 |> Seq.tryFind (fun k -> k.Name = keyName)
                 |> AsyncResult.ofOption "Key not found"
 
-            return EventStoreIpfs(client, head, key)
+            return EventStoreIpfs(client, state, key)
         }
 
     member this.Append(e: DomainEvent) =
         mailbox.PostAndAsyncReply(fun rc -> Append(e, rc))
         |> Async.map (fun id -> (id, e))
 
-    member this.Publish() =
-        mailbox.PostAndAsyncReply(Publish)
+    member this.Publish() = mailbox.PostAndAsyncReply(Publish)

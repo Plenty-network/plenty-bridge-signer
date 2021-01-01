@@ -3,24 +3,25 @@ module Signer.State.``RocksDB tests``
 open System.IO
 open FsUnit.Xunit
 open RocksDbSharp
+open Signer.EventStore
 open Signer.IPFS
 open Signer.State.RocksDb
 open Xunit
 
 
-type ``With a valid db``() =
+let withDb f =
+    let temp =
+        Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
 
-    let withDb f =
-        let temp =
-            Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
+    let path = Directory.CreateDirectory(temp)
 
-        let path = Directory.CreateDirectory(temp)
+    use db =
+        RocksDb.Open(DbOptions().SetCreateIfMissing(true), path.FullName)
 
-        use db =
-            RocksDb.Open(DbOptions().SetCreateIfMissing(true), path.FullName)
+    f (new StateRocksDb(db))
+    ()
 
-        f (StateRocksDb db)
-        ()
+type ``Watcher state``() =
 
     [<Fact>]
     let ``should save Ethereum level`` () =
@@ -31,6 +32,11 @@ type ``With a valid db``() =
 
             actual.IsSome |> should equal true
             actual.Value |> should equal (bigint 64))
+
+type ``Event Store State``() =
+
+    let withDb f =
+        withDb ((fun s -> s :> EventStoreState) >> f)
 
     [<Fact>]
     let ``Should save head`` () =
