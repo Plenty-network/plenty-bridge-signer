@@ -1,5 +1,7 @@
 namespace Signer
 
+open Nethereum.Contracts
+
 
 type TezosSignature = Netezos.Keys.Signature
 
@@ -30,4 +32,4 @@ and Quorum =
 
 type DomainEvent = MintingSigned of MintingSigned
 
-type Append<'e> = 'e -> Async<EventId * 'e>
+type Append<'e> = 'e -> DomainResult<EventId * 'e>

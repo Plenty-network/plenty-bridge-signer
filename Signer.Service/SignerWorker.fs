@@ -32,6 +32,17 @@ type SignerWorker(logger: ILogger<SignerWorker>, state: StateRocksDb, minter: Mi
         | Some (Cid value) -> logger.LogInformation("At Head {v}", value)
         | None -> logger.LogInformation("Starting from scratch")
 
+    let catch = function
+        | Choice2Of2 v ->
+            logger.LogError("Error in worker {v}", v.ToString())
+            Environment.ExitCode <- 1
+            lifeTime.StopApplication()
+            Async.retn ()
+        | _ ->
+            logger.LogInformation("Worker gracefully shutdown")
+            Async.retn ()
+        
+    
     interface IHostedService with
         member this.StartAsync(ct) =
             asyncResult {
@@ -43,7 +54,7 @@ type SignerWorker(logger: ILogger<SignerWorker>, state: StateRocksDb, minter: Mi
                     check (EventStoreIpfs.Create(IpfsClient("http://localhost:5001"), "bender", state))
 
                 logger.LogInformation("All checks are green")
-                let minterWork = minter.Work store
+                let minterWork = minter.Work store |> Async.Catch |> Async.bind catch
                 minterTask <- Some(Async.StartAsTask(minterWork, cancellationToken = cancelToken.Token))
                 logger.LogInformation("Workers started")
             }

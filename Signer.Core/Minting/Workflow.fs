@@ -6,20 +6,20 @@ open Signer.Ethereum.Contract
 open Signer.Tezos
 
 
-let private toMintingParameters (e: EventLog<TransferEventDto>): MintingParameters =
+let  toMintingParameters (e: EventLog<TransferEventDto>): MintingParameters =
     { Amount = e.Event.Value
       Owner = TezosAddress.FromString e.Event.TezosAddress
       TokenId = e.Log.Address
       TxId = e.Log.TransactionHash }
 
-let private packAndSign (signer: Signer) (target: MintingTarget) (mint: MintingParameters) =
+let  packAndSign (signer: Signer) (target: MintingTarget) (mint: MintingParameters) =
     asyncResult {
         let! payload = Multisig.pack target mint |> AsyncResult.ofResult
         let! signature = signer payload
         return (mint, signature)
     }
 
-let private toEvent level (target: MintingTarget) (parameters: MintingParameters, signature: TezosSignature) =
+let  toEvent level (target: MintingTarget) (parameters: MintingParameters, signature: TezosSignature) =
     { Level = level
       Proof =
           { Signature = signature.ToBase58()
@@ -34,14 +34,19 @@ let private toEvent level (target: MintingTarget) (parameters: MintingParameters
     |> MintingSigned
     |> AsyncResult.ofSuccess
 
-let workflow (signer: Signer) (target: MintingTarget) (logEvent: EventLog<TransferEventDto>) =
+type MinterWorkflow = EventLog<TransferEventDto> -> DomainResult<(EventId * DomainEvent)>
+
+let workflow (signer: Signer) (append: _ Append) (target: MintingTarget) :MinterWorkflow =
     let packAndSign = packAndSign signer target
+    let append = append |> AsyncResult.bind
+    
+    fun logEvent -> 
+        let toEvent =
+            toEvent logEvent.Log.BlockNumber.Value target
+            |> AsyncResult.bind
 
-    let toEvent =
-        toEvent logEvent.Log.BlockNumber.Value target
-        |> AsyncResult.bind
-
-    logEvent
-    |> toMintingParameters
-    |> packAndSign
-    |> toEvent
+        logEvent
+        |> toMintingParameters
+        |> packAndSign
+        |> toEvent
+        |> append

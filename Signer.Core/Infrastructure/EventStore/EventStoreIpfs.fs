@@ -5,8 +5,8 @@ open Signer
 open Signer.IPFS
 
 type private Message =
-    | Append of DomainEvent * AsyncReplyChannel<EventId>
-    | Publish of AsyncReplyChannel<string>
+    | Append of DomainEvent * AsyncReplyChannel<Result<EventId*DomainEvent, string>>
+    | Publish of AsyncReplyChannel<Result<string, string>>
 
 type EventStoreState =
     abstract PutHead: Cid -> unit
@@ -90,24 +90,22 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
 
                     match message with
                     | Append (e, rc) ->
-                        let! result = append e head
-
-                        match result with
-                        | Ok value ->
-                            rc.Reply(EventId 10UL)
-                            do! messageLoop (Some value)
-                        | Error err -> failwith err
+                        let! cid =
+                            append e head
+                        match cid with 
+                        | Ok v -> 
+                            rc.Reply (Ok (EventId 10UL,e))
+                            do! messageLoop (Some v)
+                        | Error err  -> rc.Reply (Error err) 
                     | Publish rc ->
                         let! result = publish head
-
                         match result with
-                        | Ok value ->
-                            rc.Reply value
+                        | Ok _ as r ->
+                            rc.Reply r
                             do! messageLoop head
-                        | Error err -> failwith err
+                        | Error _ as r -> rc.Reply r
                 }
-
-            messageLoop (state.GetHead()))
+            (messageLoop (state.GetHead())) |> Async.map(fun _ -> ()))
 
     static member Create(client: IpfsClient, keyName: string, state: EventStoreState) =
         asyncResult {
@@ -123,6 +121,5 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
 
     member this.Append(e: DomainEvent) =
         mailbox.PostAndAsyncReply(fun rc -> Append(e, rc))
-        |> Async.map (fun id -> (id, e))
 
     member this.Publish() = mailbox.PostAndAsyncReply(Publish)

@@ -1,16 +1,21 @@
 module Signer.Worker.Minting
 
+open System
 open System.Threading
 open FSharp.Control
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Netezos.Keys
+open Nethereum.Contracts
+open Nethereum.Hex.HexTypes
 open Nethereum.Web3
 open Nichelson
 open Signer
 open Signer.Ethereum
+open Signer.Ethereum.Contract
 open Signer.EventStore
+open Signer.Minting
 open Signer.State.RocksDb
 open Signer.Tezos
 
@@ -55,6 +60,26 @@ type MinterService(logger: ILogger<MinterService>,
                    configuration: EthereumConfiguration,
                    state: StateRocksDb) =
 
+    let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<TransferEventDto> seq) =
+        logger.LogInformation("Processing Block {level} containing {nb} events", blockLevel.Value, events |> Seq.length)
+
+        let rec f elements =
+            asyncResult {
+                match elements with
+                | [] ->
+                    return blockLevel.Value 
+                | [ last ] ->
+                    let! _ = workflow last
+                    return blockLevel.Value
+                | head :: tail ->
+                    let! _ = workflow head
+                    return! f tail
+
+            }
+
+        f (events |> Seq.toList)
+
+
     member this.Check =
         asyncResult {
             let! block =
@@ -65,7 +90,7 @@ type MinterService(logger: ILogger<MinterService>,
             logger.LogInformation("Connected to ethereum node at level {level}", block.Value)
             return block
         }
-        |> AsyncResult.catch (fun err -> err.Message)
+        |> AsyncResult.catch (fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
 
 
 
@@ -75,31 +100,25 @@ type MinterService(logger: ILogger<MinterService>,
 
         logger.LogInformation("Resume ethereum watch at level {}", startingBlock)
         let signer = Signer.memorySigner key
-        let apply = Minting.workflow signer target
+
+        let workflow =
+            Minting.workflow signer store.Append target
+
+        let apply = apply workflow
 
         Watcher.watchFor
             web3
             { Contract = configuration.Contract
               Wait = configuration.Node.Wait
               From = startingBlock }
-        |> AsyncSeq.bufferByCountAndTime 100 1000
+        |> AsyncSeq.bufferByCountAndTime 1000 5000
         |> AsyncSeq.iterAsync (fun e ->
             async {
-                let! r = e |> Seq.map apply |> Async.Sequential
-
-                for result in r do
+                for event in e do
+                    let! result =  apply event
                     match result with
-                    | Ok v ->
-                        do! store.Append v |> Async.Ignore
-
-                        let (MintingSigned { Level = level
-                                             Proof = { TxId = tx } }) =
-                            v
-
-                        logger.LogDebug("Signed {s}", tx)
-                        state.PutEthereumLevel(level)
-                    | Error err -> logger.LogError("Error {}", err)
-
+                    | Ok level ->  state.PutEthereumLevel(level)
+                    | Error err -> return raise(ApplicationException(err))
                 let! name = store.Publish()
                 logger.LogInformation("Head published at {addr}", name)
             })
