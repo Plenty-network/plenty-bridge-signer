@@ -1,7 +1,6 @@
 module Signer.Worker.Minting
 
 open System
-open System.Threading
 open FSharp.Control
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
@@ -19,60 +18,48 @@ open Signer.Minting
 open Signer.State.RocksDb
 open Signer.Tezos
 
-let words =
-    [ "negative"
-      "shoe"
-      "enlist"
-      "emotion"
-      "monkey"
-      "sell"
-      "increase"
-      "toddler"
-      "grace"
-      "noise"
-      "tree"
-      "perfect"
-      "regular"
-      "nothing"
-      "stadium" ]
-
 let key =
-    Key.FromMnemonic(Mnemonic.Parse(words), "vespwozi.vztxobwc@tezos.example.org", "")
+    Key.FromBase58("edsk2y68dasGjkyZM2swAonhRzyNpn6mPCWtupdh8MYgkKZ6hvfRGL")
 
-let multisig = "KT1MsooZb43dWi5GpHLeoYw5gyXj9viUuMcE"
-
-let benderContract =
-    "KT1VUNmGa1JYJuNxNS4XDzwpsc9N1gpcCBN2%signer"
-
-let target =
-    { MultisigContract = TezosAddress.FromString multisig
-      BenderContract = TezosAddress.FromString(benderContract)
-      ChainId = "NetXm8tYqnMWky1" }
-
-type NodeConfiguration = { Endpoint: string; Wait: int }
 
 type EthereumConfiguration =
-    { Node: NodeConfiguration
+    { Node: EthNodeConfiguration
       Contract: string }
+
+and EthNodeConfiguration = { Endpoint: string; Wait: int }
+
+type TezosConfiguration =
+    { QuorumContract: string
+      MinterContract: string
+      Node: TezosNodeConfiguration }
+
+and TezosNodeConfiguration =
+    { ChainId: string
+      Endpoint: string
+      Timeout: int }
 
 type MinterService(logger: ILogger<MinterService>,
                    web3: Web3,
-                   configuration: EthereumConfiguration,
+                   ethConfiguration: EthereumConfiguration,
+                   tezosConfiguration: TezosConfiguration,
                    state: StateRocksDb) =
 
     let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<TransferEventDto> seq) =
-        logger.LogInformation("Processing Block {level} containing {nb} events", blockLevel.Value, events |> Seq.length)
+        logger.LogDebug("Processing Block {level} containing {nb} events", blockLevel.Value, events |> Seq.length)
 
+        let applyOne (event:EventLog<TransferEventDto>) =
+            logger.LogDebug("Processing {i}:{h}", event.Log.TransactionIndex, event.Log.TransactionHash)
+            workflow event
+        
         let rec f elements =
             asyncResult {
                 match elements with
-                | [] ->
-                    return blockLevel.Value 
+                | [] -> return blockLevel.Value
                 | [ last ] ->
-                    let! _ = workflow last
+                    let! _ = applyOne last
                     return blockLevel.Value
                 | head :: tail ->
-                    let! _ = workflow head
+                    let! _ = applyOne head
                     return! f tail
 
             }
@@ -96,7 +83,12 @@ type MinterService(logger: ILogger<MinterService>,
 
     member this.Work(store: EventStoreIpfs) =
         let startingBlock =
-            defaultArg (state.GetEthereumLevel()) 7813092I
+            defaultArg (state.GetEthereumLevel()) 7832153I
+
+        let target =
+            { QuorumContract = TezosAddress.FromString tezosConfiguration.QuorumContract
+              MinterContract = TezosAddress.FromString(tezosConfiguration.MinterContract + "%signer")
+              ChainId = tezosConfiguration.Node.ChainId }
 
         logger.LogInformation("Resume ethereum watch at level {}", startingBlock)
         let signer = Signer.memorySigner key
@@ -108,19 +100,27 @@ type MinterService(logger: ILogger<MinterService>,
 
         Watcher.watchFor
             web3
-            { Contract = configuration.Contract
-              Wait = configuration.Node.Wait
+            { Contract = ethConfiguration.Contract
+              Wait = ethConfiguration.Node.Wait
               From = startingBlock }
         |> AsyncSeq.bufferByCountAndTime 1000 5000
         |> AsyncSeq.iterAsync (fun e ->
+            logger.LogInformation("Processing {nb} blocks", e.Length)
+
             async {
                 for event in e do
-                    let! result =  apply event
+                    let! result = apply event
+
                     match result with
-                    | Ok level ->  state.PutEthereumLevel(level)
-                    | Error err -> return raise(ApplicationException(err))
+                    | Ok level -> state.PutEthereumLevel(level)
+                    | Error err -> return raise (ApplicationException(err))
+
+                logger.LogInformation("Publishing head")
+
                 let! name = store.Publish()
-                logger.LogInformation("Head published at {addr}", name)
+                match name with
+                | Ok addr -> logger.LogInformation("Head published at {addr}", addr)
+                | Error err -> return raise (ApplicationException(err))
             })
 
 
@@ -133,7 +133,16 @@ type IServiceCollection with
                   { Endpoint = configuration.["Ethereum:Node:Endpoint"]
                     Wait = configuration.GetValue<int>("Ethereum:Node:Wait") } }
 
+        let tezosConfiguration =
+            { QuorumContract = configuration.["Tezos:QuorumContract"]
+              MinterContract = configuration.["Tezos:MinterContract"]
+              Node =
+                  { Endpoint = configuration.["Tezos:Node:Endpoint"]
+                    Timeout = configuration.GetValue<int>("Tezos:Node:Timeout")
+                    ChainId = configuration.["Tezos:Node:ChainId"] } }
+
         this
+            .AddSingleton<TezosConfiguration>(tezosConfiguration)
             .AddSingleton<EthereumConfiguration>(ethereumConfiguration)
             .AddSingleton(Web3(ethereumConfiguration.Node.Endpoint))
             .AddSingleton<MinterService>()

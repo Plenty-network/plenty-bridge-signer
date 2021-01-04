@@ -28,8 +28,8 @@ let  toEvent level (target: MintingTarget) (parameters: MintingParameters, signa
             TokenId = parameters.TokenId
             TxId = parameters.TxId }
       Quorum =
-          { QuorumContract = TezosAddress.Value(target.MultisigContract)
-            MinterContract = TezosAddress.Value(target.BenderContract)
+          { QuorumContract = TezosAddress.Value(target.QuorumContract)
+            MinterContract = TezosAddress.Value(target.MinterContract)
             ChainId = target.ChainId } }
     |> MintingSigned
     |> AsyncResult.ofSuccess

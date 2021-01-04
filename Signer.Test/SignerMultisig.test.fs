@@ -15,8 +15,8 @@ let benderContract =
     "KT1VUNmGa1JYJuNxNS4XDzwpsc9N1gpcCBN2%signer"
 
 let target =
-    { MultisigContract = TezosAddress.FromString multisig
-      BenderContract = TezosAddress.FromString(benderContract)
+    { QuorumContract = TezosAddress.FromString multisig
+      MinterContract = TezosAddress.FromString(benderContract)
       ChainId = "NetXm8tYqnMWky1" }
 
 let mint =

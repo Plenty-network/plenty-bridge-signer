@@ -141,7 +141,6 @@ type Dag(client: HttpClient) =
 
             let v = cid.Cid.``/``
             return! Cid v |> AsyncResult.ofSuccess
-
         }
 
 type IpfsClient(baseUrl: string) =

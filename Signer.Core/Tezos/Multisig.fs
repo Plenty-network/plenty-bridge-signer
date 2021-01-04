@@ -12,8 +12,8 @@ type MintingParameters =
       TxId: string }
 
 type MintingTarget =
-    { MultisigContract: TezosAddress.T
-      BenderContract: TezosAddress.T
+    { QuorumContract: TezosAddress.T
+      MinterContract: TezosAddress.T
       ChainId: string }
 
 [<RequireQualifiedAccess>]
@@ -38,8 +38,8 @@ module Multisig =
 
     let private paramsType = ContractParameters signedParameters
 
-    let pack ({ MultisigContract = multisig
-                BenderContract = benderContract
+    let pack ({ QuorumContract = multisig
+                MinterContract = benderContract
                 ChainId = chainId })
              ({ Amount = amount
                 Owner = owner

@@ -64,7 +64,6 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
         asyncResult {
             let payload = serialize event
             if head.IsSome then payload.["parent"] <- link head.Value
-
             let! cid = client.Dag.PutDag(payload)
             state.PutHead cid
             return cid
