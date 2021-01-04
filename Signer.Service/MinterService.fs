@@ -45,16 +45,17 @@ type MinterService(logger: ILogger<MinterService>,
                    state: StateRocksDb) =
 
     let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<TransferEventDto> seq) =
-        logger.LogDebug("Processing Block {level} containing {nb} events", blockLevel.Value, events |> Seq.length)
+        logger.LogInformation("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
 
-        let applyOne (event:EventLog<TransferEventDto>) =
+        let applyOne (event: EventLog<TransferEventDto>) =
             logger.LogDebug("Processing {i}:{h}", event.Log.TransactionIndex, event.Log.TransactionHash)
             workflow event
-        
+
         let rec f elements =
             asyncResult {
                 match elements with
-                | [] -> return blockLevel.Value
+                | [] ->
+                    return blockLevel.Value
                 | [ last ] ->
                     let! _ = applyOne last
                     return blockLevel.Value
@@ -103,24 +104,14 @@ type MinterService(logger: ILogger<MinterService>,
             { Contract = ethConfiguration.Contract
               Wait = ethConfiguration.Node.Wait
               From = startingBlock }
-        |> AsyncSeq.bufferByCountAndTime 1000 5000
-        |> AsyncSeq.iterAsync (fun e ->
-            logger.LogInformation("Processing {nb} blocks", e.Length)
+        |> AsyncSeq.iterAsync (fun event ->
 
             async {
-                for event in e do
-                    let! result = apply event
-
-                    match result with
-                    | Ok level -> state.PutEthereumLevel(level)
-                    | Error err -> return raise (ApplicationException(err))
-
-                logger.LogInformation("Publishing head")
-
-                let! name = store.Publish()
-                match name with
-                | Ok addr -> logger.LogInformation("Head published at {addr}", addr)
+                let! result = apply event
+                match result with
+                | Ok level -> state.PutEthereumLevel(level)
                 | Error err -> return raise (ApplicationException(err))
+
             })
 
 

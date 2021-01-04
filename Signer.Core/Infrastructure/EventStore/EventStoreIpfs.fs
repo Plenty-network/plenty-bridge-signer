@@ -6,7 +6,7 @@ open Signer.IPFS
 
 type private Message =
     | Append of DomainEvent * AsyncReplyChannel<Result<EventId*DomainEvent, string>>
-    | Publish of AsyncReplyChannel<Result<string, string>>
+    | GetHead of AsyncReplyChannel<Cid option>
 
 type EventStoreState =
     abstract PutHead: Cid -> unit
@@ -96,13 +96,10 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
                             rc.Reply (Ok (EventId 10UL,e))
                             do! messageLoop (Some v)
                         | Error err  -> rc.Reply (Error err) 
-                    | Publish rc ->
-                        let! result = publish head
-                        match result with
-                        | Ok _ as r ->
-                            rc.Reply r
-                            do! messageLoop head
-                        | Error _ as r -> rc.Reply r
+                    | GetHead rc ->
+                        rc.Reply head
+                        do! messageLoop head
+                        
                 }
             (messageLoop (state.GetHead())) |> Async.map(fun _ -> ()))
 
@@ -121,4 +118,8 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
     member this.Append(e: DomainEvent) =
         mailbox.PostAndAsyncReply(fun rc -> Append(e, rc))
 
-    member this.Publish() = mailbox.PostAndAsyncReply(Publish)
+    member this.Publish() = async {
+        let! head = mailbox.PostAndAsyncReply(GetHead)
+        return! publish head
+    }
+        

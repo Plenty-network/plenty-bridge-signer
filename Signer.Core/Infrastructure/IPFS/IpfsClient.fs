@@ -95,21 +95,20 @@ type Key(client: HttpClient) =
 
 type Name(client: HttpClient) =
     member this.Publish((Cid cid), ?key: string, ?lifetime: string, ?ttl: string) =
-        asyncResult {
-            let query = HttpUtility.ParseQueryString ""
-            query.["arg"] <- cid
-            query.["key"] <- defaultArg key "self"
-            query.["lifetime"] <- defaultArg lifetime "24h"
-            query.["ttl"] <- (defaultArg ttl "0m")
+        let query = HttpUtility.ParseQueryString ""
+        query.["arg"] <- cid
+        query.["key"] <- defaultArg key "self"
+        query.["lifetime"] <- defaultArg lifetime "24h"
+        query.["ttl"] <- (defaultArg ttl "0m")
 
-            let! response =
-                client.PostAsync("name/publish?" + query.ToString(), new StringContent(""))
-                |> Http.mapResponse NamePublishResponse.Parse
+        client.PostAsync("name/publish?" + query.ToString(), new StringContent(""))
+        |> Http.mapResponse NamePublishResponse.Parse
+        |> AsyncResult.map (fun response ->
+            { Name = response.Name
+              Value = response.Value })
 
-            return
-                { Name = response.Name
-                  Value = response.Value }
-        }
+
+
 
     member this.Resolve(path) =
         asyncResult {
@@ -147,6 +146,7 @@ type IpfsClient(baseUrl: string) =
 
     let client =
         let c = new HttpClient()
+        c.Timeout <- TimeSpan.FromMinutes(5.0)
 
         if not (baseUrl.EndsWith("/"))
         then c.BaseAddress <- Uri(baseUrl + "/api/v0/")

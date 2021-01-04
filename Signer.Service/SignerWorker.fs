@@ -9,10 +9,22 @@ open Signer.EventStore
 open Signer.IPFS
 open Signer.State.RocksDb
 open Signer.Worker.Minting
+open Signer.Worker.Publish
 
-type SignerWorker(logger: ILogger<SignerWorker>, state: StateRocksDb, minter: MinterService, lifeTime : IHostApplicationLifetime) =
+type IpfsConfiguration = {
+    Endpoint: string
+    KeyName: string
+}
+
+type SignerWorker(logger: ILogger<SignerWorker>,
+                  state: StateRocksDb,
+                  ipfsConfiguration: IpfsConfiguration,
+                  minter: MinterService,
+                  publish: PublishService,
+                  lifeTime : IHostApplicationLifetime) =
 
     let mutable minterTask: Task<_> option = None
+    let mutable publishTask: Task<_> option = None
     let cancelToken = new CancellationTokenSource()
 
     let check (result: AsyncResult<_, string>) =
@@ -51,11 +63,14 @@ type SignerWorker(logger: ILogger<SignerWorker>, state: StateRocksDb, minter: Mi
                 let! store =
                     let cidOption = (state:>EventStoreState).GetHead()
                     logHead cidOption
-                    check (EventStoreIpfs.Create(IpfsClient("http://localhost:5001"), "bender", state))
+                    let eventStoreIpfsResultAsync = EventStoreIpfs.Create(IpfsClient(ipfsConfiguration.Endpoint), ipfsConfiguration.KeyName, state)
+                    check (eventStoreIpfsResultAsync)
 
                 logger.LogInformation("All checks are green")
                 let minterWork = minter.Work store |> Async.Catch |> Async.bind catch
+                let publishWork = publish.Work store |> Async.Catch |> Async.bind catch
                 minterTask <- Some(Async.StartAsTask(minterWork, cancellationToken = cancelToken.Token))
+                publishTask <- Some(Async.StartAsTask(publishWork, cancellationToken = cancelToken.Token))
                 logger.LogInformation("Workers started")
             }
             |> (fun a -> Async.StartAsTask(a, cancellationToken = ct)) :> Task
@@ -63,10 +78,9 @@ type SignerWorker(logger: ILogger<SignerWorker>, state: StateRocksDb, minter: Mi
         member this.StopAsync(cancellationToken) =
             async {
                 logger.LogInformation("Stopping workers…")
+                cancelToken.Cancel()
                 match minterTask with
                 | Some t ->
-                    cancelToken.Cancel()
-
                     Task.WhenAny(t, Task.Delay(Timeout.Infinite, cancellationToken))
                     |> Async.AwaitTask
                     |> ignore

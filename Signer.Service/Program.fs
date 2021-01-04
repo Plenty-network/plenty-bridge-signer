@@ -6,6 +6,7 @@ open Microsoft.Extensions.Hosting
 open RocksDbSharp
 open Signer.State.RocksDb
 open Signer.Worker.Minting
+open Signer.Worker.Publish
 
 module Program =
 
@@ -18,7 +19,13 @@ module Program =
 
             this.AddSingleton(new StateRocksDb(db))
 
-        member this.AddSigner(_: IConfiguration) = this.AddHostedService<SignerWorker>()
+        member this.AddSigner(conf: IConfiguration) =
+            this
+                .AddSingleton({ Endpoint = conf.["IPFS:Endpoint"]
+                                KeyName = conf.["IPFS:KeyName"] })
+                .AddHostedService<SignerWorker>()
+
+        member this.AddPublisher() = this.AddSingleton<PublishService>()
 
     let createHostBuilder args =
         Host
@@ -26,6 +33,7 @@ module Program =
             .ConfigureServices(fun hostContext services ->
                 services
                     .AddState(hostContext.Configuration)
+                    .AddPublisher()
                     .AddMinter(hostContext.Configuration)
                     .AddSigner(hostContext.Configuration)
                 |> ignore)
