@@ -5,3 +5,5 @@ FSharpx.Extras
 Newtonsoft.Json
 FSharp.Data
 rocksdb
+AWSSDK.KeyManagementService
+AWSSDK.Extensions.NETCore.Setup

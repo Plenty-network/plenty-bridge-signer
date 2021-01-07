@@ -1,6 +1,6 @@
 namespace Signer
 
-open Nethereum.Contracts
+open Netezos.Keys
 
 
 type TezosSignature = Netezos.Keys.Signature
@@ -12,6 +12,13 @@ type EventId = EventId of uint64
 type DomainResult<'T> = AsyncResult<'T, DomainError>
 
 type Signer = byte [] -> DomainResult<TezosSignature>
+
+type TezosSigner =
+
+    abstract PublicAddress: unit -> PubKey DomainResult
+    
+    abstract Sign: byte [] -> TezosSignature DomainResult
+
 
 type MintingSigned =
     { Level: bigint

@@ -22,7 +22,7 @@ module Watcher =
                  =
         let contract = web3.Eth.GetContract(erc20Abi, contract)
         let transferEvent = contract.GetEvent<TransferEventDto>()
-
+        
         let rec loop (lastPolled: bigint) =
             asyncSeq {
                 let next = lastPolled + 1I

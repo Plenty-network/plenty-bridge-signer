@@ -95,7 +95,7 @@ type MinterService(logger: ILogger<MinterService>,
         let signer = Signer.memorySigner key
 
         let workflow =
-            Minting.workflow signer store.Append target
+            Minting.workflow signer.Sign store.Append target
 
         let apply = apply workflow
 

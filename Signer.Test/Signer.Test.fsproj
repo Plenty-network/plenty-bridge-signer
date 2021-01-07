@@ -7,6 +7,13 @@
     <Compile Include="SignerMultisig.test.fs" />
     <Compile Include="Ipfs.Test.fs" />
     <Compile Include="State.Test.fs" />
+    <Compile Include="TezosKey.Test.fs" />
+    <Content Include="sample\pub.der">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sample\signature.der">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Signer.Service\Signer.Service.fsproj" />

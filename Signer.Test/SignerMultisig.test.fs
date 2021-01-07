@@ -6,7 +6,6 @@ open Nichelson
 open FsUnit.Xunit
 open Xunit
 open Signer.Tezos
-open Signer
 
 let multisig = "KT1MsooZb43dWi5GpHLeoYw5gyXj9viUuMcE"
 let fa2Contract = "KT1LL3X5FcnUji8MVVWdi8bsjDATWqVvDgCB"
@@ -14,7 +13,7 @@ let fa2Contract = "KT1LL3X5FcnUji8MVVWdi8bsjDATWqVvDgCB"
 let benderContract =
     "KT1VUNmGa1JYJuNxNS4XDzwpsc9N1gpcCBN2%signer"
 
-let target =
+let target: MintingTarget =
     { QuorumContract = TezosAddress.FromString multisig
       MinterContract = TezosAddress.FromString(benderContract)
       ChainId = "NetXm8tYqnMWky1" }
@@ -25,10 +24,9 @@ let mint =
       TokenId = "contract_on_eth"
       TxId = "txId" }
 
-let words = []
 
 let key =
-    Key.FromMnemonic(Mnemonic.Parse(words), "vespwozi.vztxobwc@tezos.example.org", "")
+    Key.FromBase58("edsk3na5J3BQh5DY8QGt4v8f3JLpGVfax6YaiRqcfLWmYKaRhs65LU")
 
 [<Fact>]
 let ``should pack`` () =
@@ -48,12 +46,13 @@ let ``should pack`` () =
 [<Fact>]
 let ``Should sign`` () =
     async {
-        let sign = Signer.memorySigner key
+        let signer = Signer.memorySigner key
 
         let! signature =
             Multisig.pack target mint
             |> AsyncResult.ofResult
-            |> AsyncResult.bind sign
+            |> AsyncResult.bind signer.Sign
+            |> AsyncResult.map (fun s -> s.ToBase58())
 
         let signature =
             match signature with
@@ -61,41 +60,7 @@ let ``Should sign`` () =
             | Error err -> failwith err
 
         signature
-        |> (fun e -> e.ToBase58())
         |> should
             equal
-               "edsigtvcit3FoxW4q7jatc84AJxs77kEnXRkpQwD8if31X6SGU8u4R6QXQBFVw3gUY7C99pW5QNXoCAe4dMHcrrerXjujG2fide"
-    }
-
-[<Fact>]
-let ``Should talk to ledger`` () =
-    async {
-        let! key = Signer.ledgerKey
-
-        key
-        |> should equal "edpkuPLUBK5Vm2TcGedc8BZ3DiE9UigpuukwdCqfrdgiQPLhkeX2Ev"
-    }
-
-[<Fact>]
-let ``Should sign with ledger`` () =
-    async {
-        let payload = Multisig.pack target mint
-        let payload =
-            match payload with
-            | Ok v -> v
-            | Error err -> failwith err
-
-        let! ledger = Ledger.Client.get () |> Async.AwaitTask
-
-        let buffer =
-            Array.concat [| Hex.Parse("05")
-                            payload |]
-
-
-        let! signature = ledger.Sign(payload) |> Async.AwaitTask
-
-        signature.ToBase58()
-        |> should
-            equal
-               "edsigtmn1obykPqt74tbCzypKzuqvJ4ydRNjRRvh5i8VhyceaTLoLb9Bgq8NW4GEUv7LkHu8NHV4wm355VN1V1L3X9Tngnx3MxG"
+               "edsigtrpTEx2R138PEeAeo3oUDbggZFsyqarK5K3KnyBUNtNb4K5X843QPpSMhE5seWL5aAQs46UyzL7BitD5hRia5Hi5QT2juK"
     }
