@@ -31,7 +31,7 @@ module Signer =
                 |> Async.AwaitTask
                 |> AsyncResult.catchAsync }
 
-    let awsSigner (client: IAmazonKeyManagementService, keyId: string) =
+    let awsSigner (client: IAmazonKeyManagementService) (keyId: string) =
         { new TezosSigner with
             member this.PublicAddress() =
                 let request = GetPublicKeyRequest()

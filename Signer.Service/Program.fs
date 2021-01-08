@@ -21,8 +21,7 @@ module Program =
 
         member this.AddSigner(conf: IConfiguration) =
             this
-                .AddSingleton({ Endpoint = conf.["IPFS:Endpoint"]
-                                KeyName = conf.["IPFS:KeyName"] })
+                .AddSingleton(conf.GetSection("IPFS").Get<IpfsConfiguration>())
                 .AddHostedService<SignerWorker>()
 
         member this.AddPublisher() = this.AddSingleton<PublishService>()
@@ -37,6 +36,7 @@ module Program =
                     .AddMinter(hostContext.Configuration)
                     .AddSigner(hostContext.Configuration)
                 |> ignore)
+
 
     [<EntryPoint>]
     let main args =

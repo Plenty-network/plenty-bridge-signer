@@ -1,6 +1,7 @@
 module Signer.Worker.Minting
 
 open System
+open Amazon.KeyManagementService
 open FSharp.Control
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
@@ -18,34 +19,43 @@ open Signer.Minting
 open Signer.State.RocksDb
 open Signer.Tezos
 
-let key =
-    Key.FromBase58("edsk2y68dasGjkyZM2swAonhRzyNpn6mPCWtupdh8MYgkKZ6hvfRGL")
+
+[<CLIMutable>]
+type EthNodeConfiguration = { Endpoint: string; Wait: int }
 
 
+[<CLIMutable>]
 type EthereumConfiguration =
     { Node: EthNodeConfiguration
       Contract: string }
 
-and EthNodeConfiguration = { Endpoint: string; Wait: int }
 
+[<CLIMutable>]
+type TezosNodeConfiguration =
+    { ChainId: string
+      Endpoint: string
+      Timeout: int }
+
+type SignerType =
+    | AWS = 0
+    | Memory = 1
+
+[<CLIMutable>]
 type TezosConfiguration =
     { QuorumContract: string
       MinterContract: string
       Node: TezosNodeConfiguration }
 
-and TezosNodeConfiguration =
-    { ChainId: string
-      Endpoint: string
-      Timeout: int }
-
 type MinterService(logger: ILogger<MinterService>,
                    web3: Web3,
                    ethConfiguration: EthereumConfiguration,
                    tezosConfiguration: TezosConfiguration,
+                   signer: TezosSigner,
                    state: StateRocksDb) =
 
     let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<TransferEventDto> seq) =
-        logger.LogInformation("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
+        logger.LogInformation
+            ("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
 
         let applyOne (event: EventLog<TransferEventDto>) =
             logger.LogDebug("Processing {i}:{h}", event.Log.TransactionIndex, event.Log.TransactionHash)
@@ -54,8 +64,7 @@ type MinterService(logger: ILogger<MinterService>,
         let rec f elements =
             asyncResult {
                 match elements with
-                | [] ->
-                    return blockLevel.Value
+                | [] -> return blockLevel.Value
                 | [ last ] ->
                     let! _ = applyOne last
                     return blockLevel.Value
@@ -84,7 +93,7 @@ type MinterService(logger: ILogger<MinterService>,
 
     member this.Work(store: EventStoreIpfs) =
         let startingBlock =
-            defaultArg (state.GetEthereumLevel()) 7832153I
+            defaultArg (state.GetEthereumLevel())  7858299I
 
         let target =
             { QuorumContract = TezosAddress.FromString tezosConfiguration.QuorumContract
@@ -92,7 +101,6 @@ type MinterService(logger: ILogger<MinterService>,
               ChainId = tezosConfiguration.Node.ChainId }
 
         logger.LogInformation("Resume ethereum watch at level {}", startingBlock)
-        let signer = Signer.memorySigner key
 
         let workflow =
             Minting.workflow signer.Sign store.Append target
@@ -108,6 +116,7 @@ type MinterService(logger: ILogger<MinterService>,
 
             async {
                 let! result = apply event
+
                 match result with
                 | Ok level -> state.PutEthereumLevel(level)
                 | Error err -> return raise (ApplicationException(err))
@@ -115,25 +124,38 @@ type MinterService(logger: ILogger<MinterService>,
             })
 
 
+let configureSigner (services:IServiceCollection) (configuration: IConfiguration) =
+    let signerType = configuration.GetSection("Tezos:Signer:Type").Get<SignerType>()
+
+    let createAwsSigner(s: IServiceProvider) =
+        let kms = s.GetService<IAmazonKeyManagementService>()
+        let keyId = configuration.["AWS:KeyId"]
+        Signer.awsSigner kms keyId :> obj
+
+    let service =
+        match signerType with
+        | SignerType.AWS ->
+            services.AddAWSService<IAmazonKeyManagementService>() |> ignore
+            ServiceDescriptor(typeof<TezosSigner>, createAwsSigner, ServiceLifetime.Singleton)
+        | SignerType.Memory ->
+            let key = configuration.["Tezos:Signer:Key"]
+            ServiceDescriptor(typeof<TezosSigner>, Signer.memorySigner(Key.FromBase58 key))
+        | _ as v -> failwith (sprintf "Unknown signer type: %A" v)
+    services.Add(service)
+    
 
 type IServiceCollection with
     member this.AddMinter(configuration: IConfiguration) =
-        let ethereumConfiguration =
-            { Contract = configuration.["Ethereum:Contract"]
-              Node =
-                  { Endpoint = configuration.["Ethereum:Node:Endpoint"]
-                    Wait = configuration.GetValue<int>("Ethereum:Node:Wait") } }
-
-        let tezosConfiguration =
-            { QuorumContract = configuration.["Tezos:QuorumContract"]
-              MinterContract = configuration.["Tezos:MinterContract"]
-              Node =
-                  { Endpoint = configuration.["Tezos:Node:Endpoint"]
-                    Timeout = configuration.GetValue<int>("Tezos:Node:Timeout")
-                    ChainId = configuration.["Tezos:Node:ChainId"] } }
-
+        let web3Factory (s: IServiceProvider) =
+            let conf = s.GetService<EthereumConfiguration>()
+            Web3(conf.Node.Endpoint) :> obj
+        this.Add(ServiceDescriptor(typeof<Web3>, web3Factory, ServiceLifetime.Singleton))
+        configureSigner this configuration
         this
-            .AddSingleton<TezosConfiguration>(tezosConfiguration)
-            .AddSingleton<EthereumConfiguration>(ethereumConfiguration)
-            .AddSingleton(Web3(ethereumConfiguration.Node.Endpoint))
+            .AddSingleton(configuration
+                .GetSection("Tezos")
+                .Get<TezosConfiguration>())
+            .AddSingleton(configuration
+                .GetSection("Ethereum")
+                .Get<EthereumConfiguration>())
             .AddSingleton<MinterService>()

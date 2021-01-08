@@ -11,6 +11,7 @@ open Signer.State.RocksDb
 open Signer.Worker.Minting
 open Signer.Worker.Publish
 
+[<CLIMutable>]
 type IpfsConfiguration = {
     Endpoint: string
     KeyName: string
