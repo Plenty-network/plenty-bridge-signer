@@ -7,7 +7,7 @@ type TezosSignature = Netezos.Keys.Signature
 
 type DomainError = string
 
-type EventId = EventId of uint64
+type EventId = EventId of string
 
 type DomainResult<'T> = AsyncResult<'T, DomainError>
 

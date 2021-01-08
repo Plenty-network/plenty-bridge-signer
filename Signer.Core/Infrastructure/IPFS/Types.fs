@@ -5,6 +5,10 @@ open System.Text.RegularExpressions
 
 type Cid = Cid of string
 
+[<RequireQualifiedAccess>]
+module Cid =
+    let value (Cid v) = v
+
 type IpfsKey = { Name: string; Id: string }
 
 type NamePublish = { Name: string; Value: string }
