@@ -83,11 +83,15 @@ type MinterService(logger: ILogger<MinterService>,
                 web3.Eth.Blocks.GetBlockNumber.SendRequestAsync()
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
+                |> AsyncResult.catch(fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
 
             logger.LogInformation("Connected to ethereum node at level {level}", block.Value)
-            return block
+            let! addr = signer.PublicAddress()
+                        |> AsyncResult.catch(fun err -> sprintf "Couldn't get public key %s" err.Message)
+            logger.LogInformation("Using signing tezos address {addr}", addr.Address)
+            return ()
         }
-        |> AsyncResult.catch (fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
+        |> AsyncResult.catch (fun err -> sprintf "Unexpected check error %s" err.Message)
 
 
 

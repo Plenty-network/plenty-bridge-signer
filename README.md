@@ -25,3 +25,13 @@ On MacOs : `brew install snappy lz4 zstd`
 For in memory signer, 
 initialize local secrets repository : `cd Signer.Service && dotnet user-secrets init`
 set your secret key in base58: `dotnet user-secrets set "Tezos:Signer:Key" "<your base58 key>"`
+
+For AWS Signer:
+Change the SignerType to `AWS` in app settings, and add the proper AWS configuration:
+```
+"AWS": {
+    "Profile": "<profile you configured>",
+    "Region": "<region to use>",
+    "KeyId": "<KMS key id to use>"
+  }
+```
