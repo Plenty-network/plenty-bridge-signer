@@ -53,6 +53,8 @@ type MinterService(logger: ILogger<MinterService>,
                    signer: TezosSigner,
                    state: StateRocksDb) =
 
+    let mutable startingBlock: bigint = 0I
+    
     let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<TransferEventDto> seq) =
         logger.LogInformation
             ("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
@@ -84,11 +86,11 @@ type MinterService(logger: ILogger<MinterService>,
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
                 |> AsyncResult.catch(fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
-
+            startingBlock <- defaultArg (state.GetEthereumLevel())block.Value
             logger.LogInformation("Connected to ethereum node at level {level}", block.Value)
             let! addr = signer.PublicAddress()
                         |> AsyncResult.catch(fun err -> sprintf "Couldn't get public key %s" err.Message)
-            logger.LogInformation("Using signing tezos address {addr}", addr.Address)
+            logger.LogInformation("Using signing tezos address {hash} {key}", addr.Address, addr.GetBase58())
             return ()
         }
         |> AsyncResult.catch (fun err -> sprintf "Unexpected check error %s" err.Message)
@@ -96,9 +98,6 @@ type MinterService(logger: ILogger<MinterService>,
 
 
     member this.Work(store: EventStoreIpfs) =
-        let startingBlock =
-            defaultArg (state.GetEthereumLevel())  7858299I
-
         let target =
             { QuorumContract = TezosAddress.FromString tezosConfiguration.QuorumContract
               MinterContract = TezosAddress.FromString(tezosConfiguration.MinterContract + "%signer")

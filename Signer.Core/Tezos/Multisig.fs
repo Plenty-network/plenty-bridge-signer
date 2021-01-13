@@ -19,22 +19,17 @@ type MintingTarget =
 [<RequireQualifiedAccess>]
 module Multisig =
 
-    let private targetContractParameter = "(or
-                             (unit %add_token)
-                             (pair %mint_token
-                                (pair (nat %amount) (address %owner))
-                                (pair (string %token_id) (string %tx_id))))"
-
-
-    let private multisigAction =
-        sprintf "(or \
-                   (unit %%change_keys) \
-                   (pair %%signer_operation \
-                      %s
-                      (address %%target)))" targetContractParameter
+    let private targetContractParameter = "(or %entry_point
+                 (pair %add_token
+                    (pair (pair (nat %decimals) (bytes %eth_contract))
+                          (pair (string %eth_symbol) (string %name)))
+                    (pair (string %symbol) (nat %token_id)))
+                 (pair %mint_token
+                    (pair (nat %amount) (address %owner))
+                    (pair (bytes %token_id) (bytes %tx_id))))"
 
     let private signedParameters =
-        sprintf "(pair (pair chain_id address) (pair nat %s))" multisigAction
+        sprintf "(pair (pair chain_id address) (pair %s address))" targetContractParameter
 
     let private paramsType = ContractParameters signedParameters
 
@@ -57,10 +52,8 @@ module Multisig =
                 paramsType.Instantiate
                     (Tuple [ StringArg chainId
                              AddressArg multisig
-                             IntArg 0I
-                             Record [ ("%signer_operation",
-                                       Record [ ("%mint_token", mint)
-                                                ("%target", AddressArg benderContract) ]) ] ])
+                             Record [ ("%mint_token", mint) ]
+                             AddressArg benderContract ])
 
             Result.Ok(Encoder.pack value)
         with err -> Result.Error err.Message

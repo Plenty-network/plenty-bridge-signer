@@ -1,6 +1,5 @@
-module Signer.Test
+module Signer.``Tezos Multisig test``
 
-open Netezos.Forge.Utils
 open Netezos.Keys
 open Nichelson
 open FsUnit.Xunit
@@ -13,6 +12,7 @@ let fa2Contract = "KT1LL3X5FcnUji8MVVWdi8bsjDATWqVvDgCB"
 let benderContract =
     "KT1VUNmGa1JYJuNxNS4XDzwpsc9N1gpcCBN2%signer"
 
+
 let target: MintingTarget =
     { QuorumContract = TezosAddress.FromString multisig
       MinterContract = TezosAddress.FromString(benderContract)
@@ -21,8 +21,8 @@ let target: MintingTarget =
 let mint =
     { Amount = 100I
       Owner = TezosAddress.FromString "tz1S792fHX5rvs6GYP49S1U58isZkp2bNmn6"
-      TokenId = "contract_on_eth"
-      TxId = "txId" }
+      TokenId = "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea"
+      TxId = "0xc2796cf51a390d3049f55cc97b6584e14e8a4a9c89b934afee27b3ce9c396f7b" }
 
 
 let key =
@@ -40,7 +40,7 @@ let ``should pack`` () =
         v
         |> should
             equal
-               "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c9400070700000508070705080707070700a4010a00000016000046f146853a32c121cfdcd4f446876ae36c4afc580707010000000f636f6e74726163745f6f6e5f6574680100000004747849640a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e6572"
+               "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c9400070705080707070700a4010a00000016000046f146853a32c121cfdcd4f446876ae36c4afc5807070a000000145592ec0cfb4dbc12d3ab100b257153436a1f0fea0a00000020c2796cf51a390d3049f55cc97b6584e14e8a4a9c89b934afee27b3ce9c396f7b0a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e6572"
     | Error err -> failwith err
 
 [<Fact>]
@@ -62,5 +62,5 @@ let ``Should sign`` () =
         signature
         |> should
             equal
-               "edsigtrpTEx2R138PEeAeo3oUDbggZFsyqarK5K3KnyBUNtNb4K5X843QPpSMhE5seWL5aAQs46UyzL7BitD5hRia5Hi5QT2juK"
+               "edsigtij4jvh9tTy6cNFUqP2TAprECDQdtqstvdKqyoVKhutWtHu8NtPhhnxqvvzzoRD7Zwdw8w8UxmWuxXHuc4uQGyCcjtKeNw"
     }
