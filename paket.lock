@@ -818,7 +818,7 @@ NUGET
       xunit.extensibility.core (2.4.1) - restriction: >= netstandard1.1
     xunit.runner.visualstudio (2.4.3)
   remote: https://nuget.pkg.github.com/bender-labs/index.json
-    Nichelson (0.0.11)
+    Nichelson (0.0.12)
       FParsec (>= 1.1.1) - restriction: >= net50
       FSharp.Core (>= 5.0) - restriction: >= net50
       Netezos.Forge (>= 1.0.1) - restriction: >= net50

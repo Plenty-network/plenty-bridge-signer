@@ -6,10 +6,10 @@ open Signer.Ethereum.Contract
 open Signer.Tezos
 
 
-let  toMintingParameters (e: EventLog<TransferEventDto>): MintingParameters =
-    { Amount = e.Event.Value
-      Owner = TezosAddress.FromString e.Event.TezosAddress
-      TokenId = e.Log.Address
+let  toMintingParameters (e: EventLog<WrapAskedEventDto>): MintingParameters =
+    { Amount = e.Event.Amount
+      Owner = e.Event.TezosAddress
+      TokenId = e.Event.Token
       TxId = e.Log.TransactionHash }
 
 let  packAndSign (signer: Signer) (target: MintingTarget) (mint: MintingParameters) =
@@ -34,7 +34,7 @@ let  toEvent level (target: MintingTarget) (parameters: MintingParameters, signa
     |> MintingSigned
     |> AsyncResult.ofSuccess
 
-type MinterWorkflow = EventLog<TransferEventDto> -> DomainResult<(EventId * DomainEvent)>
+type MinterWorkflow = EventLog<WrapAskedEventDto> -> DomainResult<(EventId * DomainEvent)>
 
 let workflow (signer: Signer) (append: _ Append) (target: MintingTarget) :MinterWorkflow =
     let packAndSign = packAndSign signer target

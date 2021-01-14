@@ -55,11 +55,11 @@ type MinterService(logger: ILogger<MinterService>,
 
     let mutable startingBlock: bigint = 0I
     
-    let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<TransferEventDto> seq) =
+    let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<WrapAskedEventDto> seq) =
         logger.LogInformation
             ("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
 
-        let applyOne (event: EventLog<TransferEventDto>) =
+        let applyOne (event: EventLog<WrapAskedEventDto>) =
             logger.LogDebug("Processing {i}:{h}", event.Log.TransactionIndex, event.Log.TransactionHash)
             workflow event
 
@@ -86,7 +86,8 @@ type MinterService(logger: ILogger<MinterService>,
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
                 |> AsyncResult.catch(fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
-            startingBlock <- defaultArg (state.GetEthereumLevel())block.Value
+            startingBlock <- defaultArg (state.GetEthereumLevel()) block.Value // 4103600I
+            state.PutEthereumLevel startingBlock
             logger.LogInformation("Connected to ethereum node at level {level}", block.Value)
             let! addr = signer.PublicAddress()
                         |> AsyncResult.catch(fun err -> sprintf "Couldn't get public key %s" err.Message)

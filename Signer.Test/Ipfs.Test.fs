@@ -2,6 +2,7 @@ module Signer.IPFS.``Client Test``
 
 open FsUnit.Xunit
 open Newtonsoft.Json.Linq
+open Nichelson
 open Signer.Ethereum.Contract
 open Xunit
 
@@ -19,7 +20,7 @@ type Dag() =
         async {
             let p =
                 JObject.FromObject
-                    (TransferEventDto(_from = "other value", _to = "nsta", _value = 10I, _tezosAddress = "ainst"))
+                    (WrapAskedEventDto(owner = "other value", token = "nsta", amount = 10I, tezosAddress = (TezosAddress.FromString "tz1naitn")))
 
             let payload = JObject()
             payload.["parent"] <- link "bafyreicxg4gn5j2krxzsj6ddonsyh4rbzxa57flplvhn25yo6fbt3agshy"
