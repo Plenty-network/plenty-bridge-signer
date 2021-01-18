@@ -11,14 +11,6 @@ Then:
  
 `dotnet paket restore`
 
-### Requirements
-
-For RocksDB to work on your machine, this libs must installed :
-* libsnappy 
-* liblz4
-* libzstd
-
-On MacOs : `brew install snappy lz4 zstd`
 
 ### Configure signing keys
 
