@@ -1,10 +1,10 @@
 namespace Signer.Service
 
+open LiteDB
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
-open RocksDbSharp
-open Signer.State.RocksDb
+open Signer.State.LiteDB
 open Signer.Worker.Minting
 open Signer.Worker.Publish
 
@@ -12,12 +12,11 @@ module Program =
 
     type IServiceCollection with
         member this.AddState(configuration: IConfiguration) =
-            let rocksDbPath = configuration.["RocksDB:Path"]
+            let liteDbPath = configuration.["LiteDB:Path"]
 
-            let db =
-                RocksDb.Open(DbOptions().SetCreateIfMissing(true), rocksDbPath)
+            let db = new LiteDatabase(sprintf "Filename=%s;Connection=direct" liteDbPath)
 
-            this.AddSingleton(new StateRocksDb(db))
+            this.AddSingleton(new StateLiteDb(db))
 
         member this.AddSigner(conf: IConfiguration) =
             this

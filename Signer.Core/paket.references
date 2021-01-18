@@ -2,6 +2,7 @@ Nichelson
 Netezos.Keys
 Nethereum.Web3
 Newtonsoft.Json
+FSharpx.Extras
 FSharp.Data
-rocksdb
+LiteDB
 AWSSDK.KeyManagementService

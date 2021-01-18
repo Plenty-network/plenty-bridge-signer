@@ -16,7 +16,7 @@ open Signer.Ethereum
 open Signer.Ethereum.Contract
 open Signer.EventStore
 open Signer.Minting
-open Signer.State.RocksDb
+open Signer.State.LiteDB
 open Signer.Tezos
 
 
@@ -51,7 +51,7 @@ type MinterService(logger: ILogger<MinterService>,
                    ethConfiguration: EthereumConfiguration,
                    tezosConfiguration: TezosConfiguration,
                    signer: TezosSigner,
-                   state: StateRocksDb) =
+                   state: StateLiteDb) =
 
     let mutable startingBlock: bigint = 0I
     

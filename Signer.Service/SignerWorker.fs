@@ -7,7 +7,7 @@ open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Signer.EventStore
 open Signer.IPFS
-open Signer.State.RocksDb
+open Signer.State.LiteDB
 open Signer.Worker.Minting
 open Signer.Worker.Publish
 
@@ -18,7 +18,7 @@ type IpfsConfiguration = {
 }
 
 type SignerWorker(logger: ILogger<SignerWorker>,
-                  state: StateRocksDb,
+                  state: StateLiteDb,
                   ipfsConfiguration: IpfsConfiguration,
                   minter: MinterService,
                   publish: PublishService,

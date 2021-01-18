@@ -18,3 +18,4 @@ nuget Nethereum.Web3 3.8.0
 nuget rocksdb 6.15.2.14869
 nuget AWSSDK.KeyManagementService 3.5.1.6
 nuget AWSSDK.Extensions.NETCore.Setup 3.3.101
+nuget LiteDB

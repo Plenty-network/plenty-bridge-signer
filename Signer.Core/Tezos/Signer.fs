@@ -3,11 +3,9 @@ namespace Signer.Tezos
 open System.IO
 open Amazon.KeyManagementService
 open Amazon.KeyManagementService.Model
-open NBitcoin
 open Org.BouncyCastle.Crypto.Digests
 open Signer
 open Netezos.Keys
-open Netezos.Ledger
 
 [<RequireQualifiedAccess>]
 module Signer =
@@ -17,19 +15,6 @@ module Signer =
             member this.PublicAddress() = k.PubKey |> AsyncResult.retn
 
             member this.Sign bytes = bytes |> k.Sign |> AsyncResult.retn }
-
-
-    let ledgerSigner (ledger: TezosLedgerClient, kind: ECKind) =
-        { new TezosSigner with
-            member this.PublicAddress() =
-                ledger.GetPublicKeyAsync(kind)
-                |> Async.AwaitTask
-                |> AsyncResult.catchAsync
-
-            member this.Sign bytes =
-                ledger.Sign(bytes)
-                |> Async.AwaitTask
-                |> AsyncResult.catchAsync }
 
     let awsSigner (client: IAmazonKeyManagementService) (keyId: string) =
         { new TezosSigner with

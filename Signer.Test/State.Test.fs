@@ -1,24 +1,16 @@
-module Signer.State.``RocksDB tests``
+module Signer.State.``LiteDB tests``
 
 open System.IO
 open FsUnit.Xunit
-open RocksDbSharp
+open LiteDB
 open Signer.EventStore
 open Signer.IPFS
-open Signer.State.RocksDb
 open Xunit
 
 
 let withDb f =
-    let temp =
-        Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
-
-    let path = Directory.CreateDirectory(temp)
-
-    use db =
-        RocksDb.Open(DbOptions().SetCreateIfMissing(true), path.FullName)
-
-    f (new StateRocksDb(db))
+    use db = new LiteDatabase("Filename=:memory:")
+    f (new StateLiteDb(db))
     ()
 
 type ``Watcher state``() =
