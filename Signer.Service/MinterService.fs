@@ -86,7 +86,7 @@ type MinterService(logger: ILogger<MinterService>,
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
                 |> AsyncResult.catch(fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
-            startingBlock <- defaultArg (state.GetEthereumLevel()) block.Value // 4103600I
+            startingBlock <- defaultArg (state.GetEthereumLevel()) block.Value // 4103600I // block.Value 
             state.PutEthereumLevel startingBlock
             logger.LogInformation("Connected to ethereum node at level {level}", block.Value)
             let! addr = signer.PublicAddress()
