@@ -26,7 +26,9 @@ type EthNodeConfiguration = { Endpoint: string; Wait: int }
 
 [<CLIMutable>]
 type EthereumConfiguration =
-    { Node: EthNodeConfiguration
+    {
+      InitialLevel: bigint
+      Node: EthNodeConfiguration
       Contract: string }
 
 
@@ -86,7 +88,7 @@ type MinterService(logger: ILogger<MinterService>,
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
                 |> AsyncResult.catch(fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
-            startingBlock <- defaultArg (state.GetEthereumLevel()) block.Value // 4103600I // block.Value 
+            startingBlock <- defaultArg (state.GetEthereumLevel()) ethConfiguration.InitialLevel 
             state.PutEthereumLevel startingBlock
             logger.LogInformation("Connected to ethereum node at level {level}", block.Value)
             let! addr = signer.PublicAddress()
