@@ -22,11 +22,11 @@ let ``Should give quorum contract owners`` () =
         let client =
             BcdClient("https://api.better-call.dev", "delphinet")
 
-        let! owners = client.GetQuorumOwners("KT1GuAQRrWVdwaTpURLutxGFEXHfFmBB8r5m", 375151UL)
+        let! owners = client.GetQuorumOwners("KT1VYSbzNFM5UhDmdRgypFhVPtKYGjLNspBL", 378279UL)
 
         owners.Length |> should equal 1
         owners.[0] |> should equal {
-            IPNSPeerId = "0024080112203b7e495ee69372f4705df0c93a9b7731e6caa7208a7352b4d34566274ea15d69"
+            IPNSPeerId = "k51qzi5uqu5dhnyxm2b8k5kypnu9jo13b89l6iddek76k7u5lig48ti5v82c15"
             PublicKey = "sppk7a8xPov96ZwVh7mKi6nkkQS8r8ycYHDp7YahhnF3q1Xb3AQmBpL"
         }
     }
