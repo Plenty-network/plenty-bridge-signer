@@ -15,6 +15,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Signer.Core", "Signer.Core\
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Indexer.Core", "Indexer.Core\Indexer.Core.fsproj", "{FCA0942C-E6D8-4202-BEC4-FC709C88C225}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Indexer.Test", "Indexer.Test\Indexer.Test.fsproj", "{EE82D7FF-195B-4B26-B001-18611B2C83E5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,5 +43,9 @@ Global
 		{FCA0942C-E6D8-4202-BEC4-FC709C88C225}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FCA0942C-E6D8-4202-BEC4-FC709C88C225}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FCA0942C-E6D8-4202-BEC4-FC709C88C225}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE82D7FF-195B-4B26-B001-18611B2C83E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE82D7FF-195B-4B26-B001-18611B2C83E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE82D7FF-195B-4B26-B001-18611B2C83E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE82D7FF-195B-4B26-B001-18611B2C83E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

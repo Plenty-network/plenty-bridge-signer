@@ -4,9 +4,11 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Library.fs" />
-    <Compile Include="Infrastructure\BCD\Types.fs" />
-    <Compile Include="Infrastructure\BCD\BcdClient.fs" />
+    <Content Include="paket.references" />
+    <Compile Include="BcdClient.Test.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Indexer.Core\Indexer.Core.fsproj" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>
