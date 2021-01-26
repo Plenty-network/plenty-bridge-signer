@@ -19,32 +19,15 @@ type WrapAskedEventDto(owner: string, token: string, amount: BigInteger, tezosAd
     [<Parameter("address", "token", 3, false)>]
     member val Token = token with get, set
 
-    [<Parameter("bytes", "tezosDestinationAddress", 4, false)>]
+    [<Parameter("string", "tezosDestinationAddress", 4, false)>]
     member this.RawAddress
-        with set (v: byte array) =
-            this.TezosAddress <- TezosAddress.FromBytes v
+        with set (v: string) =
+            this.TezosAddress <- TezosAddress.FromString v
 
     member val TezosAddress = tezosAddress with get, set
 
 
-[<Event("Transfer")>]
-type Plop(_from: string, _to: string, _value: BigInteger, _tezosAddress: string) =
-    interface IEventDTO
-
-    new() = Plop("", "", BigInteger(0), "tz1S792fHX5rvs6GYP49S1U58isZkp2bNmn6")
-
-    [<Parameter("address", "_from", 1, true)>]
-    member val From = _from with get, set
-
-    [<Parameter("address", "_to", 2, true)>]
-    member val To = _to with get, set
-
-    [<Parameter("uint256", "_value", 3, false)>]
-    member val Value = _value with get, set
-
-    member val TezosAddress = _tezosAddress with get, set
-
-let erc20Abi = """[
+let lockingContractAbi = """[
   {
     "inputs": [],
     "payable": false,
@@ -139,9 +122,9 @@ let erc20Abi = """[
       },
       {
         "indexed": false,
-        "internalType": "bytes",
+        "internalType": "string",
         "name": "tezosDestinationAddress",
-        "type": "bytes"
+        "type": "string"
       }
     ],
     "name": "WrapAsked",
@@ -397,9 +380,9 @@ let erc20Abi = """[
         "type": "address"
       },
       {
-        "internalType": "bytes",
+        "internalType": "string",
         "name": "tezosAddress",
-        "type": "bytes"
+        "type": "string"
       }
     ],
     "name": "wrap",
@@ -434,6 +417,11 @@ let erc20Abi = """[
       },
       {
         "internalType": "bytes",
+        "name": "tezosTransaction",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
         "name": "signatures",
         "type": "bytes"
       }
@@ -448,27 +436,6 @@ let erc20Abi = """[
     ],
     "payable": false,
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "message",
-        "type": "bytes"
-      }
-    ],
-    "name": "getMessageHash",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -490,9 +457,9 @@ let erc20Abi = """[
         "type": "bytes"
       },
       {
-        "internalType": "uint256",
-        "name": "_nonce",
-        "type": "uint256"
+        "internalType": "bytes",
+        "name": "tezosTransaction",
+        "type": "bytes"
       }
     ],
     "name": "encodeTransactionData",
@@ -526,9 +493,9 @@ let erc20Abi = """[
         "type": "bytes"
       },
       {
-        "internalType": "uint256",
-        "name": "_nonce",
-        "type": "uint256"
+        "internalType": "bytes",
+        "name": "tezosTransaction",
+        "type": "bytes"
       }
     ],
     "name": "getTransactionHash",
@@ -542,6 +509,251 @@ let erc20Abi = """[
     "payable": false,
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "tezosTransaction",
+        "type": "bytes"
+      }
+    ],
+    "name": "isTezosTransactionProcessed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
   }
+]
+"""
+
+let erc20Abi = """[
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "name",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_spender",
+                "type": "address"
+            },
+            {
+                "name": "_value",
+                "type": "uint256"
+            }
+        ],
+        "name": "approve",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_from",
+                "type": "address"
+            },
+            {
+                "name": "_to",
+                "type": "address"
+            },
+            {
+                "name": "_value",
+                "type": "uint256"
+            }
+        ],
+        "name": "transferFrom",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "_owner",
+                "type": "address"
+            }
+        ],
+        "name": "balanceOf",
+        "outputs": [
+            {
+                "name": "balance",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_to",
+                "type": "address"
+            },
+            {
+                "name": "_value",
+                "type": "uint256"
+            }
+        ],
+        "name": "transfer",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "_owner",
+                "type": "address"
+            },
+            {
+                "name": "_spender",
+                "type": "address"
+            }
+        ],
+        "name": "allowance",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "fallback"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Approval",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Transfer",
+        "type": "event"
+    }
 ]
 """

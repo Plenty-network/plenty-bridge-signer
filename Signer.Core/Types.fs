@@ -3,7 +3,7 @@ namespace Signer
 open Netezos.Keys
 
 
-type TezosSignature = Netezos.Keys.Signature
+type TezosSignature = Signature
 
 type DomainError = string
 
@@ -16,27 +16,36 @@ type Signer = byte [] -> DomainResult<TezosSignature>
 type TezosSigner =
 
     abstract PublicAddress: unit -> PubKey DomainResult
-    
+
     abstract Sign: byte [] -> TezosSignature DomainResult
 
 
-type MintingSigned =
-    { Level: bigint
-      Proof: PressProof
-      Quorum: Quorum }
-
-and PressProof =
+type PressProof =
     { Amount: bigint
       Owner: string
       TokenId: string
       TxId: string
       Signature: string }
 
+type MintingSigned =
+    { Level: bigint
+      Proof: PressProof
+      Quorum: Quorum }
+
 and Quorum =
     { QuorumContract: string
       MinterContract: string
       ChainId: string }
 
-type DomainEvent = MintingSigned of MintingSigned
+type UnwrapSigned =
+    { Level: bigint
+      Proof: PressProof
+      Quorum: EthQuorum }
+
+and EthQuorum = { LockingContract: string }
+
+type DomainEvent =
+    | MintingSigned of MintingSigned
+    | UnwrapSigned of UnwrapSigned
 
 type Append<'e> = 'e -> DomainResult<EventId * 'e>

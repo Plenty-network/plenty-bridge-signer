@@ -7,6 +7,7 @@
     <Compile Include="SignerMultisig.test.fs" />
     <Compile Include="Ipfs.Test.fs" />
     <Compile Include="State.Test.fs" />
+    <Compile Include="Ethereum.Multisig.Test.fs" />
     <Compile Include="TezosKey.Test.fs" />
     <Content Include="sample\pub.der">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -1,6 +1,5 @@
 namespace Signer.Tezos
 
-open FParsec
 open Nichelson
 open Nichelson.Contract
 open Nichelson.Contract.Arg
