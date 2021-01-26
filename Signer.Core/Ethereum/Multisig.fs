@@ -3,6 +3,7 @@ module Signer.Ethereum.Multisig
 open System.Text
 open Nethereum.Web3
 open Org.BouncyCastle.Utilities.Encoders
+open Signer
 
 type UnwrapParameters = {
     TokenContract: string
@@ -10,6 +11,7 @@ type UnwrapParameters = {
     Amount: bigint
     OperationId: string
 }
+type EthPack = UnwrapParameters -> byte array DomainResult
 
 let transferCall (web3: Web3) erc20Address destination amount =
     let erc20 =
@@ -22,8 +24,8 @@ let transferCall (web3: Web3) erc20Address destination amount =
 
     Hex.Decode(data.[2..])
 
-let transactionHash (web3: Web3) lockingContractAddress (parameters:UnwrapParameters) =
-    async {
+let transactionHash (web3: Web3) lockingContractAddress (parameters: UnwrapParameters) =
+    asyncResult {
         let locking =
             web3.Eth.GetContract(Contract.lockingContractAbi, lockingContractAddress)
 
@@ -33,8 +35,9 @@ let transactionHash (web3: Web3) lockingContractAddress (parameters:UnwrapParame
         let! hash =
             locking
                 .GetFunction("getTransactionHash")
-                .CallAsync(parameters.Destination, 0, data, Encoding.UTF8.GetBytes(parameters.OperationId))
+                .CallAsync<byte array>(parameters.Destination, 0, data, Encoding.UTF8.GetBytes(parameters.OperationId))
             |> Async.AwaitTask
-
+            |> AsyncResult.ofAsync
+            |> AsyncResult.catch (fun err -> err.Message)
         return hash
     }

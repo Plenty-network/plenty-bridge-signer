@@ -10,12 +10,13 @@
     <Compile Include="Tezos\Crypto.fs" />
     <Compile Include="Tezos\Multisig.fs" />
     <Compile Include="Tezos\Signer.fs" />
+    <Compile Include="Tezos\Minter.fs" />
     <Compile Include="Ethereum\Contract.fs" />
     <Compile Include="Ethereum\Watcher.fs" />
-    <Compile Include="Ethereum\Signer.fs" />
     <Compile Include="Ethereum\Multisig.fs" />
+    <Compile Include="Ethereum\Signer.fs" />
     <Compile Include="Minting\Workflow.fs" />
-    <Compile Include="Burning\Workflow.fs" />
+    <Compile Include="Unwrap\Workflow.fs" />
     <Compile Include="Infrastructure\IPFS\Types.fs" />
     <Compile Include="Infrastructure\IPFS\IpfsClient.fs" />
     <Compile Include="Infrastructure\EventStore\EventStoreIpfs.fs" />

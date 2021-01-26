@@ -27,7 +27,7 @@ let toEvent level (target: MintingTarget) (parameters: MintingParameters, signat
                 Amount = parameters.Amount
                 Owner = TezosAddress.Value(parameters.Owner)
                 TokenId = parameters.TokenId
-                TxId = parameters.TxId }
+                OperationId = parameters.TxId }
           Quorum =
               { QuorumContract = TezosAddress.Value(target.QuorumContract)
                 MinterContract = TezosAddress.Value(target.MinterContract)

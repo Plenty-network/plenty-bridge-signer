@@ -29,7 +29,7 @@ type EthereumConfiguration =
     {
       InitialLevel: bigint
       Node: EthNodeConfiguration
-      Contract: string }
+      LockingContract: string }
 
 
 [<CLIMutable>]
@@ -115,7 +115,7 @@ type MinterService(logger: ILogger<MinterService>,
 
         Watcher.watchFor
             web3
-            { Contract = ethConfiguration.Contract
+            { Contract = ethConfiguration.LockingContract
               Wait = ethConfiguration.Node.Wait
               From = startingBlock }
         |> AsyncSeq.iterAsync (fun event ->
@@ -135,7 +135,7 @@ let configureSigner (services:IServiceCollection) (configuration: IConfiguration
 
     let createAwsSigner(s: IServiceProvider) =
         let kms = s.GetService<IAmazonKeyManagementService>()
-        let keyId = configuration.["AWS:KeyId"]
+        let keyId = configuration.["AWS:TezosKeyId"]
         Signer.awsSigner kms keyId :> obj
 
     let service =
@@ -152,16 +152,7 @@ let configureSigner (services:IServiceCollection) (configuration: IConfiguration
 
 type IServiceCollection with
     member this.AddMinter(configuration: IConfiguration) =
-        let web3Factory (s: IServiceProvider) =
-            let conf = s.GetService<EthereumConfiguration>()
-            Web3(conf.Node.Endpoint) :> obj
-        this.Add(ServiceDescriptor(typeof<Web3>, web3Factory, ServiceLifetime.Singleton))
+        
         configureSigner this configuration
         this
-            .AddSingleton(configuration
-                .GetSection("Tezos")
-                .Get<TezosConfiguration>())
-            .AddSingleton(configuration
-                .GetSection("Ethereum")
-                .Get<EthereumConfiguration>())
             .AddSingleton<MinterService>()

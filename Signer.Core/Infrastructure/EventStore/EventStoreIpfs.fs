@@ -12,23 +12,27 @@ type EventStoreState =
     abstract PutHead: Cid -> unit
     abstract GetHead: unit -> Cid option
 
-type MintingSignedDto =
-    { level: string
-      proof: ProofDto
-      quorum: QuorumDto }
-
-and ProofDto =
+type ProofDto =
     { amount: string
       owner: string
       tokenId: string
       txId: string
       signature: string }
 
+type MintingSignedDto =
+    { level: string
+      proof: ProofDto
+      quorum: QuorumDto }
+
 and QuorumDto =
     { quorumContract: string
       minterContract: string
       chainId: string }
 
+type UnwrapSignedDto =
+    { level: string
+      proof: ProofDto
+      lockingContract: string }
 
 type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
     let serialize =
@@ -42,7 +46,7 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
                       { amount = proof.Amount.ToString()
                         owner = proof.Owner
                         tokenId = proof.TokenId
-                        txId = proof.TxId
+                        txId = proof.OperationId
                         signature = proof.Signature }
                   quorum =
                       { quorumContract = quorum.QuorumContract
@@ -52,6 +56,24 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
 
             let result = JObject()
             result.["type"] <- JValue("MintingSigned")
+            result.["payload"] <- payload
+            result
+        | UnwrapSigned { Level = level
+                         Proof = proof
+                         Quorum = quorum } ->
+            let payload =
+                { level = level.ToString()
+                  proof =
+                      { amount = proof.Amount.ToString()
+                        owner = proof.Owner
+                        tokenId = proof.TokenId
+                        txId = proof.OperationId
+                        signature = proof.Signature }
+                  lockingContract = quorum.LockingContract }
+                |> JObject.FromObject
+
+            let result = JObject()
+            result.["type"] <- JValue("UnwrapSigned")
             result.["payload"] <- payload
             result
 

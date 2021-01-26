@@ -9,7 +9,6 @@ open Netezos.Keys
 
 [<RequireQualifiedAccess>]
 module Signer =
-
     let memorySigner (k: Key) =
         { new TezosSigner with
             member this.PublicAddress() = k.PubKey |> AsyncResult.retn

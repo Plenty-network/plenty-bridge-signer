@@ -10,6 +10,7 @@ open Signer.IPFS
 open Signer.State.LiteDB
 open Signer.Worker.Minting
 open Signer.Worker.Publish
+open Signer.Worker.Unwrap
 
 [<CLIMutable>]
 type IpfsConfiguration = {
@@ -22,10 +23,12 @@ type SignerWorker(logger: ILogger<SignerWorker>,
                   ipfsConfiguration: IpfsConfiguration,
                   minter: MinterService,
                   publish: PublishService,
+                  unwrap: UnwrapService,
                   lifeTime : IHostApplicationLifetime) =
 
     let mutable minterTask: Task<_> option = None
     let mutable publishTask: Task<_> option = None
+    let mutable unwrapTask: Task<_> option = None
     let cancelToken = new CancellationTokenSource()
 
     let check (result: AsyncResult<_, string>) =
@@ -70,8 +73,10 @@ type SignerWorker(logger: ILogger<SignerWorker>,
                 logger.LogInformation("All checks are green")
                 let minterWork = minter.Work store |> Async.Catch |> Async.bind catch
                 let publishWork = publish.Work store |> Async.Catch |> Async.bind catch
+                let unwrapWork = unwrap.Work store |> Async.Catch |> Async.bind catch
                 minterTask <- Some(Async.StartAsTask(minterWork, cancellationToken = cancelToken.Token))
                 publishTask <- Some(Async.StartAsTask(publishWork, cancellationToken = cancelToken.Token))
+                unwrapTask <- Some(Async.StartAsTask(unwrapWork, cancellationToken = cancelToken.Token))
                 logger.LogInformation("Workers started")
             }
             |> (fun a -> Async.StartAsTask(a, cancellationToken = ct)) :> Task

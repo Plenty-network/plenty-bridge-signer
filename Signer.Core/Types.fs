@@ -18,13 +18,15 @@ type TezosSigner =
     abstract PublicAddress: unit -> PubKey DomainResult
 
     abstract Sign: byte [] -> TezosSignature DomainResult
-
+    
+type EthereumSigner =
+    abstract Sign: byte[] -> string DomainResult 
 
 type PressProof =
     { Amount: bigint
       Owner: string
       TokenId: string
-      TxId: string
+      OperationId: string
       Signature: string }
 
 type MintingSigned =

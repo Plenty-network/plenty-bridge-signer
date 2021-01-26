@@ -15,6 +15,7 @@
     <Content Include="sample\signature.der">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Compile Include="Tezos.Minter.Test.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Signer.Service\Signer.Service.fsproj" />

@@ -17,7 +17,7 @@ type QuorumOwner = {
 type BcdClient(baseUrl:string, network:string) =
     
     let client =
-        let r = HttpClient()
+        let r = new HttpClient()
         r.BaseAddress <- Uri(baseUrl)
         r
     

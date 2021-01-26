@@ -6,3 +6,4 @@ FSharpx.Extras
 FSharp.Data
 LiteDB
 AWSSDK.KeyManagementService
+TzWatch.Lib
