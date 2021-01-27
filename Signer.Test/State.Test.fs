@@ -25,6 +25,16 @@ type ``Watcher state``() =
             actual.IsSome |> should equal true
             actual.Value |> should equal (bigint 64))
 
+    [<Fact>]
+    let ``should save Tezos level`` () =
+        withDb (fun state ->
+            state.PutTezosLevel(bigint 64)
+
+            let actual = state.GetTezosLevel()
+
+            actual.IsSome |> should equal true
+            actual.Value |> should equal (bigint 64))
+
 type ``Event Store State``() =
 
     let withDb f =

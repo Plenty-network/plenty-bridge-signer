@@ -20,7 +20,10 @@ type TezosSigner =
     abstract Sign: byte [] -> TezosSignature DomainResult
     
 type EthereumSigner =
-    abstract Sign: byte[] -> string DomainResult 
+    
+    abstract Sign: byte[] -> string DomainResult
+    
+    abstract PublicAddress: unit -> string DomainResult
 
 type PressProof =
     { Amount: bigint

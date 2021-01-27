@@ -9,20 +9,40 @@ open Netezos.Rpc
 open Nethereum.Signer
 open Nethereum.Web3
 open Signer
+open Signer.Configuration
 open Signer.EventStore
 open Signer.State.LiteDB
-open Signer.Worker.Minting
 open TzWatch.Domain
 open TzWatch.Sync
 
 type UnwrapService(logger: ILogger<UnwrapService>,
                    web3: Web3,
+                   tezosRpc: TezosRpc,
                    ethConfiguration: EthereumConfiguration,
                    tezosConfiguration: TezosConfiguration,
                    signer: EthereumSigner,
                    state: StateLiteDb) =
+    
+    let mutable startingBlock: bigint = 2I
+    member this.Check =
+        asyncResult {
+            let! blockHead = tezosRpc.Blocks.Head.Header.GetAsync()
+                            |> Async.AwaitTask
+                            |> AsyncResult.ofAsync
+                            |> AsyncResult.catch(fun err -> sprintf "Couldn't connect to tezos node %s" err.Message)
+           
+            startingBlock <- defaultArg (state.GetTezosLevel()) (bigint tezosConfiguration.InitialLevel) 
+            state.PutTezosLevel startingBlock
+            logger.LogInformation("Connected to tezos node at level {level}", blockHead.Value<int>("level"))
+            let! addr = signer.PublicAddress()
+                        |> AsyncResult.catch(fun err -> sprintf "Couldn't get public key %s" err.Message)
+            logger.LogInformation("Using signing eth address {hash}", addr)
+            return ()
+        }
+        |> AsyncResult.catch (fun err -> sprintf "Unexpected check error %s" err.Message)
+    
     member this.Work(store: EventStoreIpfs) =
-        logger.LogInformation("Resume tezos watch at level {}", 0)
+        logger.LogInformation("Resume tezos watch at level {}", startingBlock)
 
         let pack =
             Ethereum.Multisig.transactionHash web3 ethConfiguration.LockingContract
@@ -36,7 +56,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
               Confirmations = 0u }
 
         let poller =
-            SyncNode(new TezosRpc(tezosConfiguration.Node.Endpoint), tezosConfiguration.Node.ChainId)
+            SyncNode(tezosRpc, tezosConfiguration.Node.ChainId)
 
         Subscription.run poller (Height 3) parameters
         |> AsyncSeq.iterAsync (fun event ->

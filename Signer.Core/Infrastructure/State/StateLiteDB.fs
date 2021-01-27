@@ -10,6 +10,7 @@ module LiteDB =
 
     let private stateCollection = "state"
     let private ethereumLevelId = BsonValue(1)
+    let private tezosLevelId = BsonValue(2)
     let private eventStoreHeadId = BsonValue(0)
 
     let private toBson<'a> id (value: 'a) =
@@ -38,6 +39,13 @@ module LiteDB =
 
         member this.GetEthereumLevel() =
             find db (fun v -> v.AsBinary |> bigint) ethereumLevelId
+            
+        member this.PutTezosLevel(v: bigint) =
+            save db tezosLevelId (v.ToByteArray()) |> ignore
+            ()
+
+        member this.GetTezosLevel() =
+            find db (fun v -> v.AsBinary |> bigint) tezosLevelId
 
         interface EventStoreState with
             member this.PutHead(Cid value) =

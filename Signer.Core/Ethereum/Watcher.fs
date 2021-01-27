@@ -12,12 +12,12 @@ module Watcher =
 
     type WatchParameters =
         { From: bigint
-          Wait: int
+          Confirmations: int
           Contract: string }
 
     let watchFor (web3: Web3)
                  ({ From = from
-                    Wait = wait
+                    Confirmations = confirmations
                     Contract = contract })
                  =
         let contract =
@@ -34,7 +34,7 @@ module Watcher =
                     |> Async.AwaitTask
                     |> Async.map (fun v -> v.Value)
 
-                let maxBlock = lastBlock - (wait |> bigint)
+                let maxBlock = lastBlock - (confirmations |> bigint)
 
                 if maxBlock <= next then
                     do! Async.Sleep 5000

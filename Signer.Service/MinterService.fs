@@ -12,41 +12,13 @@ open Nethereum.Hex.HexTypes
 open Nethereum.Web3
 open Nichelson
 open Signer
+open Signer.Configuration
 open Signer.Ethereum
 open Signer.Ethereum.Contract
 open Signer.EventStore
 open Signer.Minting
 open Signer.State.LiteDB
 open Signer.Tezos
-
-
-[<CLIMutable>]
-type EthNodeConfiguration = { Endpoint: string; Wait: int }
-
-
-[<CLIMutable>]
-type EthereumConfiguration =
-    {
-      InitialLevel: bigint
-      Node: EthNodeConfiguration
-      LockingContract: string }
-
-
-[<CLIMutable>]
-type TezosNodeConfiguration =
-    { ChainId: string
-      Endpoint: string
-      Timeout: int }
-
-type SignerType =
-    | AWS = 0
-    | Memory = 1
-
-[<CLIMutable>]
-type TezosConfiguration =
-    { QuorumContract: string
-      MinterContract: string
-      Node: TezosNodeConfiguration }
 
 type MinterService(logger: ILogger<MinterService>,
                    web3: Web3,
@@ -69,9 +41,6 @@ type MinterService(logger: ILogger<MinterService>,
             asyncResult {
                 match elements with
                 | [] -> return blockLevel.Value
-                | [ last ] ->
-                    let! _ = applyOne last
-                    return blockLevel.Value
                 | head :: tail ->
                     let! _ = applyOne head
                     return! f tail
@@ -88,7 +57,7 @@ type MinterService(logger: ILogger<MinterService>,
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
                 |> AsyncResult.catch(fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
-            startingBlock <- defaultArg (state.GetEthereumLevel()) ethConfiguration.InitialLevel 
+            startingBlock <- defaultArg (state.GetEthereumLevel()) (bigint ethConfiguration.InitialLevel) 
             state.PutEthereumLevel startingBlock
             logger.LogInformation("Connected to ethereum node at level {level}", block.Value)
             let! addr = signer.PublicAddress()
@@ -116,7 +85,7 @@ type MinterService(logger: ILogger<MinterService>,
         Watcher.watchFor
             web3
             { Contract = ethConfiguration.LockingContract
-              Wait = ethConfiguration.Node.Wait
+              Confirmations = ethConfiguration.Node.Confirmations
               From = startingBlock }
         |> AsyncSeq.iterAsync (fun event ->
 
