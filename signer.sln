@@ -17,6 +17,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Indexer.Core", "Indexer.Cor
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Indexer.Test", "Indexer.Test\Indexer.Test.fsproj", "{EE82D7FF-195B-4B26-B001-18611B2C83E5}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Indexer.Service", "Indexer.Service\Indexer.Service.fsproj", "{B3FB0EA0-52CE-4DBA-8544-595C7DCF854D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,5 +49,9 @@ Global
 		{EE82D7FF-195B-4B26-B001-18611B2C83E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE82D7FF-195B-4B26-B001-18611B2C83E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE82D7FF-195B-4B26-B001-18611B2C83E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3FB0EA0-52CE-4DBA-8544-595C7DCF854D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3FB0EA0-52CE-4DBA-8544-595C7DCF854D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3FB0EA0-52CE-4DBA-8544-595C7DCF854D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3FB0EA0-52CE-4DBA-8544-595C7DCF854D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
