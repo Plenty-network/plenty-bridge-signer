@@ -1,7 +1,5 @@
 module Signer.Unwrap
 
-open System.Text
-open Nichelson
 open Signer.Ethereum.Multisig
 open TzWatch.Domain
 
@@ -13,7 +11,7 @@ module EthereumAddress =
     let value (EthereumAddress v) = v
 
 
-type UnwrapWorkflow = Update -> DomainResult<(EventId * DomainEvent)>
+type UnwrapWorkflow = bigint -> Update -> DomainResult<(EventId * DomainEvent)>
 
 let private toPayload hash value =
     match value with
@@ -27,11 +25,17 @@ let private toPayload hash value =
         |> AsyncResult.ofSuccess
     | _ -> AsyncResult.ofError "Wrong update type"
 
+let private updateIdToString =
+    function
+    | InternalOperation ({OpgHash=hash;Counter=counter}, nonce) -> sprintf "%s/%i/%i" hash counter nonce
+    | Operation { OpgHash = hash; Counter=counter } -> sprintf "%s/%i" hash counter
+
 let workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) (append: _ Append): UnwrapWorkflow =
 
-    fun (update: Update) ->
+    fun level update ->
         asyncResult {
-            let! s = toPayload update.Hash update.Value
+            let operationId = (updateIdToString update.UpdateId)
+            let! s = toPayload operationId update.Value
             let! packed = pack s
             let! signature = signer.Sign packed
 
@@ -39,11 +43,11 @@ let workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) 
                 { Amount = s.Amount
                   Owner = s.Destination
                   TokenId = s.TokenContract
-                  OperationId = update.Hash
+                  OperationId = operationId
                   Signature = signature }
 
             let event =
-                { Level = bigint update.Level
+                { Level = level
                   Proof = proof
                   Quorum = { LockingContract = lockingContract } }
 

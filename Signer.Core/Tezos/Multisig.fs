@@ -8,7 +8,8 @@ type MintingParameters =
     { Amount: bigint
       Owner: TezosAddress.T
       TokenId: string
-      TxId: string }
+      BlockHash: string
+      LogIndex: bigint }
 
 type MintingTarget =
     { QuorumContract: TezosAddress.T
@@ -18,14 +19,13 @@ type MintingTarget =
 [<RequireQualifiedAccess>]
 module Multisig =
 
+    // todo: deals with real add_token params
     let private targetContractParameter = "(or %entry_point
                  (pair %add_token
-                    (pair (pair (nat %decimals) (bytes %eth_contract))
-                          (pair (string %eth_symbol) (string %name)))
-                    (pair (string %symbol) (nat %token_id)))
+                    unit unit)
                  (pair %mint_token
-                    (pair (nat %amount) (address %owner))
-                    (pair (bytes %token_id) (bytes %tx_id))))"
+                    (pair (nat %amount) (pair %event_id (bytes %block_hash) (nat %log_index)))
+                    (pair (address %owner) (bytes %token_id))))"
 
     let private signedParameters =
         sprintf "(pair (pair chain_id address) (pair %s address))" targetContractParameter
@@ -38,14 +38,17 @@ module Multisig =
              ({ Amount = amount
                 Owner = owner
                 TokenId = tokenId
-                TxId = txId })
+                BlockHash = txId
+                LogIndex = logIndex })
              =
         try
             let mint =
                 Record [ ("%amount", IntArg(amount))
                          ("%owner", AddressArg owner)
                          ("%token_id", StringArg tokenId)
-                         ("%tx_id", StringArg txId) ]
+                         ("%event_id",
+                          Record [ ("%block_hash", StringArg txId)
+                                   ("%log_index", IntArg logIndex) ]) ]
 
             let value =
                 paramsType.Instantiate

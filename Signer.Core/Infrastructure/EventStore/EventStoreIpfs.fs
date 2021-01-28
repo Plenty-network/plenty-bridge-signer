@@ -12,16 +12,17 @@ type EventStoreState =
     abstract PutHead: Cid -> unit
     abstract GetHead: unit -> Cid option
 
-type ProofDto =
+type PressProofDto =
     { amount: string
       owner: string
       tokenId: string
-      txId: string
+      blockHash: string
+      logIndex: bigint
       signature: string }
 
 type MintingSignedDto =
     { level: string
-      proof: ProofDto
+      proof: PressProofDto
       quorum: QuorumDto }
 
 and QuorumDto =
@@ -29,9 +30,16 @@ and QuorumDto =
       minterContract: string
       chainId: string }
 
+type UnwrapProofDto =
+    { amount: string
+      owner: string
+      tokenId: string
+      operationId: string
+      signature: string }
+
 type UnwrapSignedDto =
     { level: string
-      proof: ProofDto
+      proof: UnwrapProofDto
       lockingContract: string }
 
 type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
@@ -46,7 +54,8 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
                       { amount = proof.Amount.ToString()
                         owner = proof.Owner
                         tokenId = proof.TokenId
-                        txId = proof.OperationId
+                        blockHash = proof.EventId.BlockHash
+                        logIndex = proof.EventId.LogIndex
                         signature = proof.Signature }
                   quorum =
                       { quorumContract = quorum.QuorumContract
@@ -67,7 +76,7 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
                       { amount = proof.Amount.ToString()
                         owner = proof.Owner
                         tokenId = proof.TokenId
-                        txId = proof.OperationId
+                        operationId = proof.OperationId
                         signature = proof.Signature }
                   lockingContract = quorum.LockingContract }
                 |> JObject.FromObject

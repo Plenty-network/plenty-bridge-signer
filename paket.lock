@@ -1,6 +1,6 @@
 NUGET
   remote: https://api.nuget.org/v3/index.json
-    AWSSDK.Core (3.5.2)
+    AWSSDK.Core (3.5.2.2)
       Microsoft.Bcl.AsyncInterfaces (>= 1.1) - restriction: && (< net35) (< netcoreapp3.1) (>= netstandard2.0)
       Microsoft.CSharp (>= 4.0.1) - restriction: && (< net35) (>= netstandard1.3) (< netstandard2.0)
       System.Net.Requests (>= 4.0.11) - restriction: && (< net35) (>= netstandard1.3) (< netstandard2.0)
@@ -927,7 +927,7 @@ NUGET
       FParsec (>= 1.1.1) - restriction: >= net50
       FSharp.Core (>= 5.0) - restriction: >= net50
       Netezos.Forge (>= 1.0.1) - restriction: >= net50
-    TzWatch.Lib (0.0.3)
+    TzWatch.Lib (0.0.4)
       FSharp.Control.Reactive (>= 4.4.2) - restriction: >= net50
       FSharp.Core (>= 5.0) - restriction: >= net50
       FSharp.Data (>= 3.3.3) - restriction: >= net50

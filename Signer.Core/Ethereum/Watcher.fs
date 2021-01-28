@@ -40,7 +40,8 @@ module Watcher =
                     do! Async.Sleep 5000
                     yield! loop lastPolled
 
-                // todo: on peut exploser la taille de la réponse d'infura ici.
+                (* todo: it is possible to explode infura max response size here (10k). Should think of a better
+                 solution *)
                 let filter =
                     transferEvent.CreateFilterInput
                         (BlockParameter(HexBigInteger(next)), BlockParameter(HexBigInteger(maxBlock)))

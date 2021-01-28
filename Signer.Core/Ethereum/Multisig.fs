@@ -35,7 +35,7 @@ let transactionHash (web3: Web3) lockingContractAddress (parameters: UnwrapParam
         let! hash =
             locking
                 .GetFunction("getTransactionHash")
-                .CallAsync<byte array>(parameters.Destination, 0, data, Encoding.UTF8.GetBytes(parameters.OperationId))
+                .CallAsync<byte array>(parameters.Destination, 0, data, parameters.OperationId)
             |> Async.AwaitTask
             |> AsyncResult.ofAsync
             |> AsyncResult.catch (fun err -> err.Message)

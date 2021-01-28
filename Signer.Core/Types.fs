@@ -25,7 +25,19 @@ type EthereumSigner =
     
     abstract PublicAddress: unit -> string DomainResult
 
+type EthEventId = {
+    BlockHash: string
+    LogIndex: bigint
+}
+
 type PressProof =
+    { Amount: bigint
+      Owner: string
+      TokenId: string
+      EventId: EthEventId
+      Signature: string }
+
+type BurnProof =
     { Amount: bigint
       Owner: string
       TokenId: string
@@ -44,7 +56,7 @@ and Quorum =
 
 type UnwrapSigned =
     { Level: bigint
-      Proof: PressProof
+      Proof: BurnProof
       Quorum: EthQuorum }
 
 and EthQuorum = { LockingContract: string }

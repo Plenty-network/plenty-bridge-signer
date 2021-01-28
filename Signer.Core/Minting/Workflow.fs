@@ -10,7 +10,8 @@ let toMintingParameters (e: EventLog<WrapAskedEventDto>): MintingParameters =
     { Amount = e.Event.Amount
       Owner = e.Event.TezosAddress
       TokenId = e.Event.Token
-      TxId = e.Log.TransactionHash }
+      BlockHash = e.Log.BlockHash
+      LogIndex = e.Log.LogIndex.Value }
 
 let packAndSign (signer: Signer) (target: MintingTarget) (mint: MintingParameters) =
     asyncResult {
@@ -27,7 +28,9 @@ let toEvent level (target: MintingTarget) (parameters: MintingParameters, signat
                 Amount = parameters.Amount
                 Owner = TezosAddress.Value(parameters.Owner)
                 TokenId = parameters.TokenId
-                OperationId = parameters.TxId }
+                EventId =
+                    { BlockHash = parameters.BlockHash
+                      LogIndex = parameters.LogIndex } }
           Quorum =
               { QuorumContract = TezosAddress.Value(target.QuorumContract)
                 MinterContract = TezosAddress.Value(target.MinterContract)

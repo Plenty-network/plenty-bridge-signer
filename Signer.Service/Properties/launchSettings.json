@@ -6,6 +6,15 @@
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       }
+    },
+    "TestNet": {
+      "commandName": "Project",
+      "dotnetRunMessages": "true",
+      "workingDirectory": "./",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "CONFIG_FILE": "appsettings.testnet.json"
+      }
     }
   }
 }

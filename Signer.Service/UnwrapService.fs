@@ -12,6 +12,7 @@ open Signer
 open Signer.Configuration
 open Signer.EventStore
 open Signer.State.LiteDB
+open Signer.Unwrap
 open TzWatch.Domain
 open TzWatch.Sync
 
@@ -22,27 +23,57 @@ type UnwrapService(logger: ILogger<UnwrapService>,
                    tezosConfiguration: TezosConfiguration,
                    signer: EthereumSigner,
                    state: StateLiteDb) =
-    
-    let mutable startingBlock: bigint = 2I
+
+    let mutable lastBlock: bigint = 2I
+
+    let idToString =
+        function
+        | Operation { OpgHash = hash; Counter = counter } -> sprintf "Hash:%s Counter:%i" hash counter
+        | InternalOperation ({ OpgHash = hash; Counter = counter }, nonce) ->
+            sprintf "Hash:%s Counter:%i Nonce:%i" hash counter nonce
+
+    let apply (workflow: UnwrapWorkflow) level (updates: Update seq) =
+        logger.LogInformation("Processing Block {level} containing {nb} event(s)", level, updates |> Seq.length)
+
+        let applyOne (event: Update) =
+            logger.LogDebug("Processing {id}", idToString event.UpdateId)
+            workflow level event
+
+        let rec f elements =
+            asyncResult {
+                match elements with
+                | [] -> return level
+                | head :: tail ->
+                    let! _ = applyOne head
+                    return! f tail
+
+            }
+
+        f (updates |> Seq.toList)
+
     member this.Check =
         asyncResult {
-            let! blockHead = tezosRpc.Blocks.Head.Header.GetAsync()
-                            |> Async.AwaitTask
-                            |> AsyncResult.ofAsync
-                            |> AsyncResult.catch(fun err -> sprintf "Couldn't connect to tezos node %s" err.Message)
-           
-            startingBlock <- defaultArg (state.GetTezosLevel()) (bigint tezosConfiguration.InitialLevel) 
-            state.PutTezosLevel startingBlock
+            let! blockHead =
+                tezosRpc.Blocks.Head.Header.GetAsync()
+                |> Async.AwaitTask
+                |> AsyncResult.ofAsync
+                |> AsyncResult.catch (fun err -> sprintf "Couldn't connect to tezos node %s" err.Message)
+
+            lastBlock <- defaultArg (state.GetTezosLevel()) (bigint tezosConfiguration.InitialLevel)
+            state.PutTezosLevel lastBlock
             logger.LogInformation("Connected to tezos node at level {level}", blockHead.Value<int>("level"))
-            let! addr = signer.PublicAddress()
-                        |> AsyncResult.catch(fun err -> sprintf "Couldn't get public key %s" err.Message)
+
+            let! addr =
+                signer.PublicAddress()
+                |> AsyncResult.catch (fun err -> sprintf "Couldn't get public key %s" err.Message)
+
             logger.LogInformation("Using signing eth address {hash}", addr)
             return ()
         }
         |> AsyncResult.catch (fun err -> sprintf "Unexpected check error %s" err.Message)
-    
+
     member this.Work(store: EventStoreIpfs) =
-        logger.LogInformation("Resume tezos watch at level {}", startingBlock)
+        logger.LogInformation("Resume tezos watch at level {}", lastBlock)
 
         let pack =
             Ethereum.Multisig.transactionHash web3 ethConfiguration.LockingContract
@@ -58,14 +89,20 @@ type UnwrapService(logger: ILogger<UnwrapService>,
         let poller =
             SyncNode(tezosRpc, tezosConfiguration.Node.ChainId)
 
-        Subscription.run poller (Height 3) parameters
-        |> AsyncSeq.iterAsync (fun event ->
+        let apply = apply workflow
+        
+        Subscription.run poller (Height (int lastBlock+1)) parameters
+        |> AsyncSeq.iterAsync (fun { BlockHeader = header
+                                     Updates = updates } ->
             async {
-                logger.LogDebug("Event from tezos level:{e} hash:{val}", event.Level, event.Hash)
-                let! result = workflow event
+
+                logger.LogDebug("Event from tezos level:{e} Block:{val}", header.Level, header.Hash)
+
+                let! result = apply header.Level updates
 
                 match result with
-                | Ok level -> logger.LogInformation "Wrapped event" // state.PutEthereumLevel(level)
+                | Ok level ->
+                    state.PutTezosLevel(level)
                 | Error err -> return raise (ApplicationException(err))
             })
 

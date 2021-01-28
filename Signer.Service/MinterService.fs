@@ -32,9 +32,9 @@ type MinterService(logger: ILogger<MinterService>,
     let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<WrapAskedEventDto> seq) =
         logger.LogInformation
             ("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
-
+        
         let applyOne (event: EventLog<WrapAskedEventDto>) =
-            logger.LogDebug("Processing {i}:{h}", event.Log.TransactionIndex, event.Log.TransactionHash)
+            logger.LogDebug("Processing {i}:{h} index:{ind}", event.Log.TransactionIndex, event.Log.TransactionHash, event.Log.LogIndex)
             workflow event
 
         let rec f elements =

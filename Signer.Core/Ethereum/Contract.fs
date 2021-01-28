@@ -416,9 +416,9 @@ let lockingContractAbi = """[
         "type": "bytes"
       },
       {
-        "internalType": "bytes",
-        "name": "tezosTransaction",
-        "type": "bytes"
+        "internalType": "string",
+        "name": "tezosOperation",
+        "type": "string"
       },
       {
         "internalType": "bytes",
@@ -457,9 +457,9 @@ let lockingContractAbi = """[
         "type": "bytes"
       },
       {
-        "internalType": "bytes",
-        "name": "tezosTransaction",
-        "type": "bytes"
+        "internalType": "string",
+        "name": "tezosOperation",
+        "type": "string"
       }
     ],
     "name": "encodeTransactionData",
@@ -493,9 +493,9 @@ let lockingContractAbi = """[
         "type": "bytes"
       },
       {
-        "internalType": "bytes",
-        "name": "tezosTransaction",
-        "type": "bytes"
+        "internalType": "string",
+        "name": "tezosOperation",
+        "type": "string"
       }
     ],
     "name": "getTransactionHash",
@@ -514,12 +514,12 @@ let lockingContractAbi = """[
     "constant": true,
     "inputs": [
       {
-        "internalType": "bytes",
-        "name": "tezosTransaction",
-        "type": "bytes"
+        "internalType": "string",
+        "name": "tezosOperation",
+        "type": "string"
       }
     ],
-    "name": "isTezosTransactionProcessed",
+    "name": "isTezosOperationProcessed",
     "outputs": [
       {
         "internalType": "bool",
@@ -532,6 +532,7 @@ let lockingContractAbi = """[
     "type": "function"
   }
 ]
+
 """
 
 let erc20Abi = """[
