@@ -6,7 +6,7 @@ open Signer.Ethereum.Contract
 open Signer.Tezos
 
 
-let toMintingParameters (e: EventLog<WrapAskedEventDto>): MintingParameters =
+let toMintingParameters (e: EventLog<ERC20WrapAskedEventDto>): MintingParameters =
     { Amount = e.Event.Amount
       Owner = e.Event.TezosAddress
       TokenId = e.Event.Token
@@ -38,7 +38,7 @@ let toEvent level (target: MintingTarget) (parameters: MintingParameters, signat
 
     event |> MintingSigned |> AsyncResult.ofSuccess
 
-type MinterWorkflow = EventLog<WrapAskedEventDto> -> DomainResult<(EventId * DomainEvent)>
+type MinterWorkflow = EventLog<ERC20WrapAskedEventDto> -> DomainResult<(EventId * DomainEvent)>
 
 let workflow (signer: Signer) (append: _ Append) (target: MintingTarget): MinterWorkflow =
     let packAndSign = packAndSign signer target

@@ -20,7 +20,7 @@ type Dag() =
         async {
             let p =
                 JObject.FromObject
-                    (WrapAskedEventDto(owner = "other value", token = "nsta", amount = 10I, tezosAddress = (TezosAddress.FromString "tz1naitn")))
+                    (ERC20WrapAskedEventDto(owner = "other value", token = "nsta", amount = 10I, tezosAddress = (TezosAddress.FromString "tz1naitn")))
 
             let payload = JObject()
             payload.["parent"] <- link "bafyreicxg4gn5j2krxzsj6ddonsyh4rbzxa57flplvhn25yo6fbt3agshy"

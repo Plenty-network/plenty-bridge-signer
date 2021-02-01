@@ -47,7 +47,7 @@ type TezosConfiguration =
       MinterContract: string
       Node: TezosNodeConfiguration }
 
-type WatcherWorkflow = EventLog<WrapAskedEventDto> -> DomainResult<bigint>
+type WatcherWorkflow = EventLog<ERC20WrapAskedEventDto> -> DomainResult<bigint>
 
 let workflow : WatcherWorkflow =
     fun logEvent ->
@@ -72,11 +72,11 @@ type WatcherService(logger: ILogger<WatcherService>,
 
     let mutable startingBlock: bigint = 0I
     
-    let apply (workflow: WatcherWorkflow) (blockLevel: HexBigInteger, events: EventLog<WrapAskedEventDto> seq) =
+    let apply (workflow: WatcherWorkflow) (blockLevel: HexBigInteger, events: EventLog<ERC20WrapAskedEventDto> seq) =
         logger.LogInformation
             ("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
 
-        let applyOne (event: EventLog<WrapAskedEventDto>) =
+        let applyOne (event: EventLog<ERC20WrapAskedEventDto>) =
             logger.LogDebug("Processing {i}:{h}", event.Log.TransactionIndex, event.Log.TransactionHash)
             workflow event
 

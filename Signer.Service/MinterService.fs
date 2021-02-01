@@ -29,11 +29,11 @@ type MinterService(logger: ILogger<MinterService>,
 
     let mutable startingBlock: bigint = 0I
     
-    let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<WrapAskedEventDto> seq) =
+    let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<ERC20WrapAskedEventDto> seq) =
         logger.LogInformation
             ("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
         
-        let applyOne (event: EventLog<WrapAskedEventDto>) =
+        let applyOne (event: EventLog<ERC20WrapAskedEventDto>) =
             logger.LogDebug("Processing {i}:{h} index:{ind}", event.Log.TransactionIndex, event.Log.TransactionHash, event.Log.LogIndex)
             workflow event
 

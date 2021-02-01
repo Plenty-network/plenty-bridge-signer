@@ -4,20 +4,20 @@ open System.Numerics
 open Nethereum.ABI.FunctionEncoding.Attributes
 open Nichelson
 
-[<Event("WrapAsked")>]
-type WrapAskedEventDto(owner: string, token: string, amount: BigInteger, tezosAddress: TezosAddress.T) =
+[<Event("ERC20WrapAsked")>]
+type ERC20WrapAskedEventDto(owner: string, token: string, amount: BigInteger, tezosAddress: TezosAddress.T) =
     interface IEventDTO
 
-    new() = WrapAskedEventDto("", "", BigInteger(0), TezosAddress.FromString "tz1S792fHX5rvs6GYP49S1U58isZkp2bNmn6")
+    new() = ERC20WrapAskedEventDto("", "", BigInteger(0), TezosAddress.FromString "tz1S792fHX5rvs6GYP49S1U58isZkp2bNmn6")
 
     [<Parameter("address", "user", 1, false)>]
     member val Owner = owner with get, set
 
-    [<Parameter("uint256", "amount", 2, false)>]
-    member val Amount = amount with get, set
-
-    [<Parameter("address", "token", 3, false)>]
+    [<Parameter("address", "token", 2, false)>]
     member val Token = token with get, set
+    
+    [<Parameter("uint256", "amount", 3, false)>]
+    member val Amount = amount with get, set
 
     [<Parameter("string", "tezosDestinationAddress", 4, false)>]
     member this.RawAddress
@@ -65,6 +65,68 @@ let lockingContractAbi = """[
     "inputs": [
       {
         "indexed": false,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "tezosDestinationAddress",
+        "type": "string"
+      }
+    ],
+    "name": "ERC20WrapAsked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "tezosDestinationAddress",
+        "type": "string"
+      }
+    ],
+    "name": "ERC721WrapAsked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "bytes32",
         "name": "txHash",
         "type": "bytes32"
@@ -97,37 +159,6 @@ let lockingContractAbi = """[
       }
     ],
     "name": "RemovedOwner",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "tezosDestinationAddress",
-        "type": "string"
-      }
-    ],
-    "name": "WrapAsked",
     "type": "event"
   },
   {
@@ -370,14 +401,14 @@ let lockingContractAbi = """[
     "constant": false,
     "inputs": [
       {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "contractAddress",
-        "type": "address"
       },
       {
         "internalType": "string",
@@ -385,7 +416,38 @@ let lockingContractAbi = """[
         "type": "string"
       }
     ],
-    "name": "wrap",
+    "name": "wrapERC20",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "success",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "tezosAddress",
+        "type": "string"
+      }
+    ],
+    "name": "wrapERC721",
     "outputs": [
       {
         "internalType": "bool",
@@ -530,8 +592,45 @@ let lockingContractAbi = """[
     "payable": false,
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "name": "onERC721Received",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ]
+
 
 """
 

@@ -23,7 +23,7 @@ module Watcher =
         let contract =
             web3.Eth.GetContract(lockingContractAbi, contract)
 
-        let transferEvent = contract.GetEvent<WrapAskedEventDto>()
+        let transferEvent = contract.GetEvent<ERC20WrapAskedEventDto>()
 
         let rec loop (lastPolled: bigint) =
             asyncSeq {
