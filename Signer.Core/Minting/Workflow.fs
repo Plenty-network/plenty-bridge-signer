@@ -2,16 +2,20 @@ module Signer.Minting
 
 open Nethereum.Contracts
 open Nichelson
+open Signer.Ethereum
 open Signer.Ethereum.Contract
 open Signer.Tezos
 
 
-let toMintingParameters (e: EventLog<ERC20WrapAskedEventDto>): MintingParameters =
-    { Amount = e.Event.Amount
-      Owner = e.Event.TezosAddress
-      TokenId = e.Event.Token
-      BlockHash = e.Log.BlockHash
-      LogIndex = e.Log.LogIndex.Value }
+let toMintingParameters (e: EthEventLog): MintingParameters =
+    match e.Event with
+    | Erc20Wrapped dto ->
+        { Amount = dto.Amount
+          Owner = dto.TezosAddress
+          TokenId = dto.Token
+          BlockHash = e.Log.BlockHash
+          LogIndex = e.Log.LogIndex.Value }
+    | Erc721Wrapped dto -> failwith (sprintf "Not implemented yet %A" dto)
 
 let packAndSign (signer: Signer) (target: MintingTarget) (mint: MintingParameters) =
     asyncResult {
@@ -38,7 +42,7 @@ let toEvent level (target: MintingTarget) (parameters: MintingParameters, signat
 
     event |> MintingSigned |> AsyncResult.ofSuccess
 
-type MinterWorkflow = EventLog<ERC20WrapAskedEventDto> -> DomainResult<(EventId * DomainEvent)>
+type MinterWorkflow = EthEventLog -> DomainResult<(EventId * DomainEvent)>
 
 let workflow (signer: Signer) (append: _ Append) (target: MintingTarget): MinterWorkflow =
     let packAndSign = packAndSign signer target

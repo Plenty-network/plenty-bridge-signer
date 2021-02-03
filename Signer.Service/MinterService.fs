@@ -7,14 +7,12 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Netezos.Keys
-open Nethereum.Contracts
 open Nethereum.Hex.HexTypes
 open Nethereum.Web3
 open Nichelson
 open Signer
 open Signer.Configuration
 open Signer.Ethereum
-open Signer.Ethereum.Contract
 open Signer.EventStore
 open Signer.Minting
 open Signer.State.LiteDB
@@ -28,13 +26,18 @@ type MinterService(logger: ILogger<MinterService>,
                    state: StateLiteDb) =
 
     let mutable startingBlock: bigint = 0I
-    
-    let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: EventLog<ERC20WrapAskedEventDto> seq) =
+
+    let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: _ seq) =
         logger.LogInformation
             ("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
-        
-        let applyOne (event: EventLog<ERC20WrapAskedEventDto>) =
-            logger.LogDebug("Processing {i}:{h} index:{ind}", event.Log.TransactionIndex, event.Log.TransactionHash, event.Log.LogIndex)
+
+        let applyOne (event: EthEventLog) =
+            logger.LogDebug
+                ("Processing {i}:{h} index:{ind}",
+                 event.Log.TransactionIndex,
+                 event.Log.TransactionHash,
+                 event.Log.LogIndex)
+
             workflow event
 
         let rec f elements =
@@ -56,12 +59,16 @@ type MinterService(logger: ILogger<MinterService>,
                 web3.Eth.Blocks.GetBlockNumber.SendRequestAsync()
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
-                |> AsyncResult.catch(fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
-            startingBlock <- defaultArg (state.GetEthereumLevel()) (bigint ethConfiguration.InitialLevel) 
+                |> AsyncResult.catch (fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
+
+            startingBlock <- defaultArg (state.GetEthereumLevel()) (bigint ethConfiguration.InitialLevel)
             state.PutEthereumLevel startingBlock
             logger.LogInformation("Connected to ethereum node at level {level}", block.Value)
-            let! addr = signer.PublicAddress()
-                        |> AsyncResult.catch(fun err -> sprintf "Couldn't get public key %s" err.Message)
+
+            let! addr =
+                signer.PublicAddress()
+                |> AsyncResult.catch (fun err -> sprintf "Couldn't get public key %s" err.Message)
+
             logger.LogInformation("Using signing tezos address {hash} {key}", addr.Address, addr.GetBase58())
             return ()
         }
@@ -99,29 +106,36 @@ type MinterService(logger: ILogger<MinterService>,
             })
 
 
-let configureSigner (services:IServiceCollection) (configuration: IConfiguration) =
-    let signerType = configuration.GetSection("Tezos:Signer:Type").Get<SignerType>()
+let configureSigner (services: IServiceCollection) (configuration: IConfiguration) =
+    let signerType =
+        configuration
+            .GetSection("Tezos:Signer:Type")
+            .Get<SignerType>()
 
-    let createAwsSigner(s: IServiceProvider) =
-        let kms = s.GetService<IAmazonKeyManagementService>()
+    let createAwsSigner (s: IServiceProvider) =
+        let kms =
+            s.GetService<IAmazonKeyManagementService>()
+
         let keyId = configuration.["AWS:TezosKeyId"]
         Signer.awsSigner kms keyId :> obj
 
     let service =
         match signerType with
         | SignerType.AWS ->
-            services.AddAWSService<IAmazonKeyManagementService>() |> ignore
+            services.AddAWSService<IAmazonKeyManagementService>()
+            |> ignore
+
             ServiceDescriptor(typeof<TezosSigner>, createAwsSigner, ServiceLifetime.Singleton)
         | SignerType.Memory ->
             let key = configuration.["Tezos:Signer:Key"]
-            ServiceDescriptor(typeof<TezosSigner>, Signer.memorySigner(Key.FromBase58 key))
-        | _ as v -> failwith (sprintf "Unknown signer type: %A" v)
+            ServiceDescriptor(typeof<TezosSigner>, Signer.memorySigner (Key.FromBase58 key))
+        | v -> failwith (sprintf "Unknown signer type: %A" v)
+
     services.Add(service)
-    
+
 
 type IServiceCollection with
     member this.AddMinter(configuration: IConfiguration) =
-        
+
         configureSigner this configuration
-        this
-            .AddSingleton<MinterService>()
+        this.AddSingleton<MinterService>()

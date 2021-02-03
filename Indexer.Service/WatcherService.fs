@@ -5,23 +5,14 @@ open FSharp.Control
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
-open Nethereum.Contracts
 open Nethereum.Hex.HexTypes
 open Nethereum.Web3
-open Nichelson
 open Signer
 open Signer.Ethereum
-open Signer.Ethereum.Contract
-open Signer.EventStore
-open Signer.Minting
 open Signer.State.LiteDB
-open Signer.Tezos
 
 [<CLIMutable>]
-type IpfsConfiguration = {
-    Endpoint: string
-    KeyName: string
-}
+type IpfsConfiguration = { Endpoint: string; KeyName: string }
 
 [<CLIMutable>]
 type EthNodeConfiguration = { Endpoint: string; Wait: int }
@@ -29,8 +20,7 @@ type EthNodeConfiguration = { Endpoint: string; Wait: int }
 
 [<CLIMutable>]
 type EthereumConfiguration =
-    {
-      InitialLevel: bigint
+    { InitialLevel: bigint
       Node: EthNodeConfiguration
       Contract: string }
 
@@ -47,12 +37,11 @@ type TezosConfiguration =
       MinterContract: string
       Node: TezosNodeConfiguration }
 
-type WatcherWorkflow = EventLog<ERC20WrapAskedEventDto> -> DomainResult<bigint>
+type WatcherWorkflow = EthEventLog -> DomainResult<bigint>
 
-let workflow : WatcherWorkflow =
-    fun logEvent ->
-        AsyncResult.ofSuccess logEvent.Log.BlockNumber.Value
-        (* 
+let workflow: WatcherWorkflow =
+    fun logEvent -> AsyncResult.ofSuccess logEvent.Log.BlockNumber.Value
+(*
         let toEvent =
             toEvent logEvent.Log.BlockNumber.Value target
             |> AsyncResult.bind
@@ -65,18 +54,18 @@ let workflow : WatcherWorkflow =
 
 
 type WatcherService(logger: ILogger<WatcherService>,
-                   web3: Web3,
-                   ethConfiguration: EthereumConfiguration,
-                   tezosConfiguration: TezosConfiguration,
-                   state: StateLiteDb) =
+                    web3: Web3,
+                    ethConfiguration: EthereumConfiguration,
+                    tezosConfiguration: TezosConfiguration,
+                    state: StateLiteDb) =
 
     let mutable startingBlock: bigint = 0I
-    
-    let apply (workflow: WatcherWorkflow) (blockLevel: HexBigInteger, events: EventLog<ERC20WrapAskedEventDto> seq) =
+
+    let apply (workflow: WatcherWorkflow) (blockLevel: HexBigInteger, events: _ seq) =
         logger.LogInformation
             ("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
 
-        let applyOne (event: EventLog<ERC20WrapAskedEventDto>) =
+        let applyOne event =
             logger.LogDebug("Processing {i}:{h}", event.Log.TransactionIndex, event.Log.TransactionHash)
             workflow event
 
@@ -102,8 +91,9 @@ type WatcherService(logger: ILogger<WatcherService>,
                 web3.Eth.Blocks.GetBlockNumber.SendRequestAsync()
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
-                |> AsyncResult.catch(fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
-            startingBlock <- defaultArg (state.GetEthereumLevel()) ethConfiguration.InitialLevel 
+                |> AsyncResult.catch (fun err -> sprintf "Couldn't connect to ethereum node %s" err.Message)
+
+            startingBlock <- defaultArg (state.GetEthereumLevel()) ethConfiguration.InitialLevel
             state.PutEthereumLevel startingBlock
             logger.LogInformation("Connected to ethereum node at level {level}", block.Value)
             return ()
@@ -128,7 +118,7 @@ type WatcherService(logger: ILogger<WatcherService>,
         Watcher.watchFor
             web3
             { Contract = ethConfiguration.Contract
-              Confirmations = ethConfiguration.Node.Wait 
+              Confirmations = ethConfiguration.Node.Wait
               From = startingBlock }
         |> AsyncSeq.iterAsync (fun event ->
 
@@ -136,19 +126,21 @@ type WatcherService(logger: ILogger<WatcherService>,
                 let! result = apply event
 
                 match result with
-                | Ok level -> state.PutEthereumLevel(level) 
+                | Ok level -> state.PutEthereumLevel(level)
                 | Error err -> return raise (ApplicationException(err))
 
             })
 
-    
+
 
 type IServiceCollection with
     member this.AddWatcher(configuration: IConfiguration) =
         let web3Factory (s: IServiceProvider) =
             let conf = s.GetService<EthereumConfiguration>()
             Web3(conf.Node.Endpoint) :> obj
+
         this.Add(ServiceDescriptor(typeof<Web3>, web3Factory, ServiceLifetime.Singleton))
+
         this
             .AddSingleton(configuration
                 .GetSection("Tezos")

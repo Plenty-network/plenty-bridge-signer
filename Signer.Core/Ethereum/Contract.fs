@@ -26,6 +26,28 @@ type ERC20WrapAskedEventDto(owner: string, token: string, amount: BigInteger, te
 
     member val TezosAddress = tezosAddress with get, set
 
+[<Event("ERC721WrapAsked")>]
+type ERC721WrapAskedEventDto(owner: string, token: string, tokenId: BigInteger, tezosAddress: TezosAddress.T) =
+    interface IEventDTO
+
+    new() = ERC721WrapAskedEventDto("", "", BigInteger(0), TezosAddress.FromString "tz1S792fHX5rvs6GYP49S1U58isZkp2bNmn6")
+
+    [<Parameter("address", "user", 1, false)>]
+    member val Owner = owner with get, set
+
+    [<Parameter("address", "token", 2, false)>]
+    member val Token = token with get, set
+    
+    [<Parameter("uint256", "tokenId", 3, false)>]
+    member val TokenId = tokenId with get, set
+
+    [<Parameter("string", "tezosDestinationAddress", 4, false)>]
+    member this.RawAddress
+        with set (v: string) =
+            this.TezosAddress <- TezosAddress.FromString v
+
+    member val TezosAddress = tezosAddress with get, set
+
 
 let lockingContractAbi = """[
   {
