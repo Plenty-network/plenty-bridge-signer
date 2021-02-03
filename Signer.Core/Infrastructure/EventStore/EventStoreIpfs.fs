@@ -12,17 +12,24 @@ type EventStoreState =
     abstract PutHead: Cid -> unit
     abstract GetHead: unit -> Cid option
 
-type PressProofDto =
+type Erc20ParametersDto =
     { amount: string
       owner: string
-      tokenId: string
+      erc20: string
       blockHash: string
-      logIndex: bigint
-      signature: string }
+      logIndex: bigint }
 
-type MintingSignedDto =
+type Erc721ParametersDto =
+    { tokenId: string
+      owner: string
+      erc721: string
+      blockHash: string
+      logIndex: bigint }
+
+type ErcMintDto<'T> =
     { level: string
-      proof: PressProofDto
+      parameters: 'T
+      signature: string
       quorum: QuorumDto }
 
 and QuorumDto =
@@ -33,7 +40,7 @@ and QuorumDto =
 type UnwrapProofDto =
     { amount: string
       owner: string
-      tokenId: string
+      erc20: string
       operationId: string
       signature: string }
 
@@ -45,28 +52,52 @@ type UnwrapSignedDto =
 type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
     let serialize =
         function
-        | MintingSigned { Level = level
-                          Proof = proof
-                          Quorum = quorum } ->
+        | Erc20MintingSigned { Level = level
+                               Call = { Quorum = quorum
+                                        Signature = signature
+                                        Parameters = p } } ->
             let payload =
                 { level = level.ToString()
-                  proof =
-                      { amount = proof.Amount.ToString()
-                        owner = proof.Owner
-                        tokenId = proof.TokenId
-                        blockHash = proof.EventId.BlockHash
-                        logIndex = proof.EventId.LogIndex
-                        signature = proof.Signature }
+                  signature = signature
+                  parameters =
+                      { amount = p.Amount.ToString()
+                        owner = p.Owner.Value
+                        erc20 = p.Erc20
+                        blockHash = p.EventId.BlockHash
+                        logIndex = p.EventId.LogIndex }
                   quorum =
-                      { quorumContract = quorum.QuorumContract
-                        minterContract = quorum.MinterContract
+                      { quorumContract = quorum.QuorumContract.Value
+                        minterContract = quorum.MinterContract.Value
                         chainId = quorum.ChainId } }
                 |> JObject.FromObject
 
             let result = JObject()
-            result.["type"] <- JValue("MintingSigned")
+            result.["type"] <- JValue("Erc20MintingSigned")
             result.["payload"] <- payload
             result
+        | Erc721MintingSigned { Level = level
+                                Call = { Quorum = quorum
+                                         Signature = signature
+                                         Parameters = p } } ->
+            let payload =
+                { level = level.ToString()
+                  signature = signature
+                  parameters =
+                      { tokenId = p.TokenId.ToString()
+                        owner = p.Owner.Value
+                        erc721 = p.Erc721
+                        blockHash = p.EventId.BlockHash
+                        logIndex = p.EventId.LogIndex }
+                  quorum =
+                      { quorumContract = quorum.QuorumContract.Value
+                        minterContract = quorum.MinterContract.Value
+                        chainId = quorum.ChainId } }
+                |> JObject.FromObject
+
+            let result = JObject()
+            result.["type"] <- JValue("Erc721MintingSigned")
+            result.["payload"] <- payload
+            result    
         | UnwrapSigned { Level = level
                          Proof = proof
                          Quorum = quorum } ->
@@ -75,7 +106,7 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
                   proof =
                       { amount = proof.Amount.ToString()
                         owner = proof.Owner
-                        tokenId = proof.TokenId
+                        erc20 = proof.TokenId
                         operationId = proof.OperationId
                         signature = proof.Signature }
                   lockingContract = quorum.LockingContract }

@@ -1,6 +1,7 @@
 namespace Signer
 
 open Netezos.Keys
+open Nichelson
 
 
 type TezosSignature = Signature
@@ -18,24 +19,40 @@ type TezosSigner =
     abstract PublicAddress: unit -> PubKey DomainResult
 
     abstract Sign: byte [] -> TezosSignature DomainResult
-    
+
 type EthereumSigner =
-    
-    abstract Sign: byte[] -> string DomainResult
-    
+
+    abstract Sign: byte [] -> string DomainResult
+
     abstract PublicAddress: unit -> string DomainResult
 
-type EthEventId = {
-    BlockHash: string
-    LogIndex: bigint
-}
+type EthEventId = { BlockHash: string; LogIndex: bigint }
 
-type PressProof =
-    { Amount: bigint
-      Owner: string
-      TokenId: string
-      EventId: EthEventId
-      Signature: string }
+type Erc20MintingParameters =
+    { Erc20: string
+      Amount: bigint
+      Owner: TezosAddress.T
+      EventId: EthEventId }
+
+type Erc721MintingParameters =
+    { Erc721: string
+      TokenId: bigint
+      Owner: TezosAddress.T
+      EventId: EthEventId }
+
+type Quorum =
+    { QuorumContract: TezosAddress.T
+      MinterContract: TezosAddress.T
+      ChainId: string }
+
+type QuorumContractCall<'T> =
+    { Quorum: Quorum
+      Signature: string
+      Parameters: 'T }
+
+type ErcMint<'T> =
+    { Level: bigint
+      Call: QuorumContractCall<'T> }
 
 type BurnProof =
     { Amount: bigint
@@ -43,16 +60,6 @@ type BurnProof =
       TokenId: string
       OperationId: string
       Signature: string }
-
-type MintingSigned =
-    { Level: bigint
-      Proof: PressProof
-      Quorum: Quorum }
-
-and Quorum =
-    { QuorumContract: string
-      MinterContract: string
-      ChainId: string }
 
 type UnwrapSigned =
     { Level: bigint
@@ -62,7 +69,8 @@ type UnwrapSigned =
 and EthQuorum = { LockingContract: string }
 
 type DomainEvent =
-    | MintingSigned of MintingSigned
+    | Erc20MintingSigned of ErcMint<Erc20MintingParameters>
+    | Erc721MintingSigned of ErcMint<Erc721MintingParameters>
     | UnwrapSigned of UnwrapSigned
 
 type Append<'e> = 'e -> DomainResult<EventId * 'e>

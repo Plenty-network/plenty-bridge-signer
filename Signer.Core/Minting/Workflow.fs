@@ -1,60 +1,79 @@
 module Signer.Minting
 
-open Nethereum.Contracts
-open Nichelson
+open Nethereum.RPC.Eth.DTOs
 open Signer.Ethereum
 open Signer.Ethereum.Contract
 open Signer.Tezos
 
+type ParamFunction<'a, 'b> = 'a -> FilterLog -> 'b
 
-let toMintingParameters (e: EthEventLog): MintingParameters =
-    match e.Event with
-    | Erc20Wrapped dto ->
-        { Amount = dto.Amount
-          Owner = dto.TezosAddress
-          TokenId = dto.Token
-          BlockHash = e.Log.BlockHash
-          LogIndex = e.Log.LogIndex.Value }
-    | Erc721Wrapped dto -> failwith (sprintf "Not implemented yet %A" dto)
+let erc20Params (dto: ERC20WrapAskedEventDto) (log: FilterLog) =
+    { Erc20 = dto.Token
+      Amount = dto.Amount
+      Owner = dto.TezosAddress
+      EventId =
+          { BlockHash = log.BlockHash
+            LogIndex = log.LogIndex.Value } }
 
-let packAndSign (signer: Signer) (target: MintingTarget) (mint: MintingParameters) =
+let erc721Params (dto: ERC721WrapAskedEventDto) (log: FilterLog) =
+    { TokenId = dto.TokenId
+      Owner = dto.TezosAddress
+      Erc721 = dto.Token
+      EventId =
+          { BlockHash = log.BlockHash
+            LogIndex = log.LogIndex.Value } }
+
+
+let erc20Workflow (signer: Signer) (quorum: Quorum) (log: FilterLog) (dto: ERC20WrapAskedEventDto) =
     asyncResult {
-        let! payload = Multisig.pack target mint |> AsyncResult.ofResult
-        let! signature = signer payload
-        return (mint, signature)
+        let parameters = erc20Params dto log
+
+        let! packed =
+            Multisig.packMintErc20 quorum parameters
+            |> AsyncResult.ofResult
+
+        let! signature = signer packed
+
+        return
+            Erc20MintingSigned
+                { Level = log.BlockNumber.Value
+                  Call =
+                      { Quorum = quorum
+                        Signature = signature.ToBase58()
+                        Parameters = parameters } }
     }
 
-let toEvent level (target: MintingTarget) (parameters: MintingParameters, signature: TezosSignature) =
-    let event: MintingSigned =
-        { Level = level
-          Proof =
-              { Signature = signature.ToBase58()
-                Amount = parameters.Amount
-                Owner = TezosAddress.Value(parameters.Owner)
-                TokenId = parameters.TokenId
-                EventId =
-                    { BlockHash = parameters.BlockHash
-                      LogIndex = parameters.LogIndex } }
-          Quorum =
-              { QuorumContract = TezosAddress.Value(target.QuorumContract)
-                MinterContract = TezosAddress.Value(target.MinterContract)
-                ChainId = target.ChainId } }
+let erc721Workflow (signer: Signer) (quorum: Quorum) (log: FilterLog) (dto: ERC721WrapAskedEventDto) =
+    asyncResult {
+        let parameters = erc721Params dto log
 
-    event |> MintingSigned |> AsyncResult.ofSuccess
+        let! packed =
+            Multisig.packMintErc721 quorum parameters
+            |> AsyncResult.ofResult
+
+        let! signature = signer packed
+
+        return
+            Erc721MintingSigned
+                { Level = log.BlockNumber.Value
+                  Call =
+                      { Quorum = quorum
+                        Signature = signature.ToBase58()
+                        Parameters = parameters } }
+    }
+
+
 
 type MinterWorkflow = EthEventLog -> DomainResult<(EventId * DomainEvent)>
 
-let workflow (signer: Signer) (append: _ Append) (target: MintingTarget): MinterWorkflow =
-    let packAndSign = packAndSign signer target
-    let append = append |> AsyncResult.bind
+
+let workflow (signer: Signer) (append: _ Append) (target: Quorum): MinterWorkflow =
+    let erc20Workflow = erc20Workflow signer target
+    let erc721Workflow = erc721Workflow signer target
+    let append = AsyncResult.bind append
 
     fun logEvent ->
-        let toEvent =
-            toEvent logEvent.Log.BlockNumber.Value target
-            |> AsyncResult.bind
-
-        logEvent
-        |> toMintingParameters
-        |> packAndSign
-        |> toEvent
+        match logEvent.Event with
+        | Erc20Wrapped dto -> erc20Workflow logEvent.Log dto
+        | Erc721Wrapped dto -> erc721Workflow logEvent.Log dto
         |> append
