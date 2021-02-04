@@ -1,35 +1,45 @@
-[<RequireQualifiedAccess>]
-module Signer.Tezos.Crypto
+namespace Signer.Tezos
 
-open Netezos.Keys
-open Nethereum.Signer.Crypto
-open Org.BouncyCastle.Asn1
-open Org.BouncyCastle.Asn1.Sec
-open Org.BouncyCastle.Asn1.X509
+open System.IO
+open Amazon.KeyManagementService
+open Amazon.KeyManagementService.Model
+open Org.BouncyCastle.Crypto.Digests
 open Signer
+open Netezos.Keys
 
+[<RequireQualifiedAccess>]
+module Crypto =
+    
+    let memorySigner (k: Key) =
+        { new TezosSigner with
+            member this.PublicAddress() = k.PubKey |> AsyncResult.retn
 
-module Secp256k1 = 
+            member this.Sign bytes = bytes |> k.Sign |> AsyncResult.retn }
 
-    let keyFromSpki (bytes: byte []) =
-        let spki =
-            SubjectPublicKeyInfo.GetInstance(Asn1Object.FromByteArray(bytes))
+    let awsSigner (client: IAmazonKeyManagementService) (keyId: string) =
+        { new TezosSigner with
+            member this.PublicAddress() =
+                let request = GetPublicKeyRequest()
+                request.KeyId <- keyId
 
-        let curve =
-            SecNamedCurves
-                .GetByOid(spki.AlgorithmID.Parameters :?> DerObjectIdentifier)
-                .Curve
+                client.GetPublicKeyAsync(request)
+                |> Async.AwaitTask
+                |> Async.map (fun r -> Keys.Secp256k1.keyFromSpki (r.PublicKey.ToArray()))
+                |> AsyncResult.catchAsync
 
-        let p =
-            curve.DecodePoint(spki.PublicKeyData.GetBytes())
+            member this.Sign bytes =
+                let request = SignRequest()
+                request.KeyId <- keyId
+                request.SigningAlgorithm <- SigningAlgorithmSpec.ECDSA_SHA_256
+                request.MessageType <- MessageType.DIGEST
+                let b2 = Blake2bDigest(256)
 
-        PubKey.FromBytes(p.GetEncoded(true), ECKind.Secp256k1)
+                b2.BlockUpdate(bytes, 0, bytes.Length)
+                let buffer = Array.zeroCreate (b2.GetDigestSize())
+                b2.DoFinal(buffer, 0) |> ignore
+                request.Message <- new MemoryStream(buffer)
 
-    let  signatureFromDer (der: byte []) =
-        let parsed = ECDSASignature.FromDER(der).MakeCanonical()
-        let result = Array.zeroCreate<byte> (64)
-        let rBytes = parsed.R.ToByteArrayUnsigned()
-        let sBytes = parsed.S.ToByteArrayUnsigned()
-        rBytes.CopyTo(result, 32 - rBytes.Length)
-        sBytes.CopyTo(result, 64 - sBytes.Length)
-        TezosSignature(result, [| 13uy; 115uy; 101uy; 19uy; 63uy |])
+                client.SignAsync(request)
+                |> Async.AwaitTask
+                |> Async.map (fun r -> Keys.Secp256k1.signatureFromDer (r.Signature.ToArray()))
+                |> AsyncResult.catchAsync }

@@ -10,7 +10,7 @@ let getKey =
     async {
         use pub = File.OpenRead("./sample/pub.der")
         let! bytes = pub.AsyncRead(int pub.Length)
-        return Crypto.Secp256k1.keyFromSpki bytes
+        return Keys.Secp256k1.keyFromSpki bytes
     }
 
 [<Fact>]
@@ -19,7 +19,7 @@ let ``Should import from der x509`` () =
         use pub = File.OpenRead("./sample/pub.der")
         let! bytes = pub.AsyncRead(int pub.Length)
 
-        let key = Crypto.Secp256k1.keyFromSpki bytes
+        let key = Keys.Secp256k1.keyFromSpki bytes
 
         key.Address
         |> should equal "tz2KbPyXNP3pqod2RX5Tdk4vq7BqYuMxjsbc"
@@ -39,7 +39,7 @@ let ``Should import signature from DER`` () =
         use sigFile = File.OpenRead("./sample/signature.der")
         let! der = sigFile.AsyncRead(int sigFile.Length)
 
-        let signature = Crypto.Secp256k1.signatureFromDer der
+        let signature = Keys.Secp256k1.signatureFromDer der
 
         key.Verify(payload, signature.ToBytes())
         |> should equal true

@@ -12,6 +12,7 @@ type EventStoreState =
     abstract PutHead: Cid -> unit
     abstract GetHead: unit -> Cid option
 
+[<CLIMutable>]
 type Erc20ParametersDto =
     { amount: string
       owner: string
@@ -19,6 +20,7 @@ type Erc20ParametersDto =
       blockHash: string
       logIndex: bigint }
 
+[<CLIMutable>]
 type Erc721ParametersDto =
     { tokenId: string
       owner: string
@@ -26,28 +28,39 @@ type Erc721ParametersDto =
       blockHash: string
       logIndex: bigint }
 
+[<CLIMutable>]
+type QuorumDto =
+    { quorumContract: string
+      minterContract: string
+      chainId: string }
+
+[<CLIMutable>]
 type ErcMintDto<'T> =
     { level: string
       parameters: 'T
       signature: string
       quorum: QuorumDto }
 
-and QuorumDto =
-    { quorumContract: string
-      minterContract: string
-      chainId: string }
+[<CLIMutable>]
+type ErcUnwrapDto<'T> =
+    { level: string
+      parameters: 'T
+      signature: string
+      lockingContract: string }
 
-type UnwrapProofDto =
+[<CLIMutable>]
+type Erc20UnwrapParametersDto =
     { amount: string
       owner: string
       erc20: string
-      operationId: string
-      signature: string }
+      operationId: string }
 
-type UnwrapSignedDto =
-    { level: string
-      proof: UnwrapProofDto
-      lockingContract: string }
+[<CLIMutable>]
+type Erc721UnwrapParametersDto =
+    { tokenId: string
+      owner: string
+      erc721: string
+      operationId: string }
 
 type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
     let serialize =
@@ -97,23 +110,43 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
             let result = JObject()
             result.["type"] <- JValue("Erc721MintingSigned")
             result.["payload"] <- payload
-            result    
-        | UnwrapSigned { Level = level
-                         Proof = proof
-                         Quorum = quorum } ->
+            result
+        | Erc20UnwrapSigned { Level = level
+                              Call = { Signature = signature
+                                       LockingContract = lockingContract
+                                       Parameters = p } } ->
             let payload =
                 { level = level.ToString()
-                  proof =
-                      { amount = proof.Amount.ToString()
-                        owner = proof.Owner
-                        erc20 = proof.TokenId
-                        operationId = proof.OperationId
-                        signature = proof.Signature }
-                  lockingContract = quorum.LockingContract }
+                  signature = signature
+                  lockingContract = lockingContract
+                  parameters =
+                      { erc20 = p.Erc20
+                        amount = p.Amount.ToString()
+                        owner = p.Owner
+                        operationId = p.OperationId } }
                 |> JObject.FromObject
 
             let result = JObject()
-            result.["type"] <- JValue("UnwrapSigned")
+            result.["type"] <- JValue("Erc20UnwrapSigned")
+            result.["payload"] <- payload
+            result
+        | Erc721UnwrapSigned { Level = level
+                               Call = { Signature = signature
+                                        LockingContract = lockingContract
+                                        Parameters = p } } ->
+            let payload =
+                { level = level.ToString()
+                  signature = signature
+                  lockingContract = lockingContract
+                  parameters =
+                      { erc721 = p.Erc721
+                        tokenId = p.TokenId.ToString()
+                        owner = p.Owner
+                        operationId = p.OperationId } }
+                |> JObject.FromObject
+
+            let result = JObject()
+            result.["type"] <- JValue("Erc721UnwrapSigned")
             result.["payload"] <- payload
             result
 

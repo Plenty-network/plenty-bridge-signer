@@ -54,23 +54,31 @@ type ErcMint<'T> =
     { Level: bigint
       Call: QuorumContractCall<'T> }
 
-type BurnProof =
+type LockingContractCall<'T> =
+    { LockingContract: string
+      Signature: string
+      Parameters: 'T }
+
+type ErcUnwrap<'T> =
+    { Level: bigint
+      Call: LockingContractCall<'T> }
+
+type Erc20UnwrapParameters =
     { Amount: bigint
       Owner: string
-      TokenId: string
-      OperationId: string
-      Signature: string }
+      Erc20: string
+      OperationId: string }
 
-type UnwrapSigned =
-    { Level: bigint
-      Proof: BurnProof
-      Quorum: EthQuorum }
-
-and EthQuorum = { LockingContract: string }
+type Erc721UnwrapParameters =
+    { TokenId: bigint
+      Owner: string
+      Erc721: string
+      OperationId: string }
 
 type DomainEvent =
     | Erc20MintingSigned of ErcMint<Erc20MintingParameters>
     | Erc721MintingSigned of ErcMint<Erc721MintingParameters>
-    | UnwrapSigned of UnwrapSigned
+    | Erc20UnwrapSigned of ErcUnwrap<Erc20UnwrapParameters>
+    | Erc721UnwrapSigned of ErcUnwrap<Erc721UnwrapParameters>
 
 type Append<'e> = 'e -> DomainResult<EventId * 'e>

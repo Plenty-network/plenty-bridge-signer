@@ -1,55 +1,88 @@
 module Signer.Unwrap
 
+open FsToolkit.ErrorHandling.Operator.AsyncResult
 open Signer.Ethereum.Multisig
+open Signer.Tezos
 open TzWatch.Domain
+open Signer.Tezos.Events
 
 type EthereumAddress = EthereumAddress of string
 
-
-[<RequireQualifiedAccess>]
-module EthereumAddress =
-    let value (EthereumAddress v) = v
-
-
 type UnwrapWorkflow = bigint -> Update -> DomainResult<(EventId * DomainEvent)>
 
-let private toPayload hash value =
-    match value with
-    | EntryPointCall { Parameters = token } ->
-        let dto = Signer.Tezos.Minter.unwrapValue token
+type private Erc20Workflow = bigint -> Erc20UnwrapParameters -> DomainResult<DomainEvent>
 
-        { TokenContract = dto.TokenId
-          Destination = dto.Destination
-          Amount = dto.Amount
-          OperationId = hash }
-        |> AsyncResult.ofSuccess
-    | _ -> AsyncResult.ofError "Wrong update type"
+type private Erc721Workflow = bigint -> Erc721UnwrapParameters -> DomainResult<DomainEvent>
 
 let private updateIdToString =
     function
-    | InternalOperation ({OpgHash=hash;Counter=counter}, nonce) -> sprintf "%s/%i/%i" hash counter nonce
-    | Operation { OpgHash = hash; Counter=counter } -> sprintf "%s/%i" hash counter
+    | InternalOperation ({ OpgHash = hash; Counter = counter }, nonce) -> sprintf "%s/%i/%i" hash counter nonce
+    | Operation { OpgHash = hash; Counter = counter } -> sprintf "%s/%i" hash counter
+
+let private route (erc20Workflow: Erc20Workflow)
+                      (erc721Workflow: Erc721Workflow)
+                      level
+                      ({ Value = value; UpdateId = id })
+                      =
+
+    match value with
+    | FungibleUnwrapped dto ->
+        let p =
+            { Amount = dto.Amount
+              Owner = dto.Destination
+              Erc20 = dto.Erc20
+              OperationId = updateIdToString id }
+
+        erc20Workflow level p
+    | NftUnwrapped dto ->
+        let p =
+            { TokenId = dto.TokenId
+              Owner = dto.Destination
+              Erc721 = dto.Erc721
+              OperationId = updateIdToString id }
+
+        erc721Workflow level p
+    | _ -> AsyncResult.ofError "Wrong update type"
+
+let erc20Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) level (p: Erc20UnwrapParameters) =
+    asyncResult {
+        let call = erc20TransferCall p
+        let! r = pack lockingContract p.Owner p.OperationId call
+        let! signature = signer.Sign(r)
+
+        return
+            Erc20UnwrapSigned
+                { Level = level
+                  Call =
+                      { LockingContract = lockingContract
+                        Signature = signature
+                        Parameters = p } }
+    }
+
+let erc721Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) level (p: Erc721UnwrapParameters) =
+    asyncResult {
+        let call = erc721SafeTransferCall lockingContract p
+        let! r = pack lockingContract p.Owner p.OperationId call
+        let! signature = signer.Sign(r)
+
+        return
+            Erc721UnwrapSigned
+                { Level = level
+                  Call =
+                      { LockingContract = lockingContract
+                        Signature = signature
+                        Parameters = p } }
+    }
 
 let workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) (append: _ Append): UnwrapWorkflow =
 
-    fun level update ->
-        asyncResult {
-            let operationId = (updateIdToString update.UpdateId)
-            let! s = toPayload operationId update.Value
-            let! packed = pack s
-            let! signature = signer.Sign packed
+    let erc20Workflow =
+        erc20Workflow signer pack lockingContract
 
-            let proof =
-                { Amount = s.Amount
-                  Owner = s.Destination
-                  TokenId = s.TokenContract
-                  OperationId = operationId
-                  Signature = signature }
+    let erc721Workflow =
+        erc721Workflow signer pack lockingContract
 
-            let event =
-                { Level = level
-                  Proof = proof
-                  Quorum = { LockingContract = lockingContract } }
+    let append = AsyncResult.bind append
+    let route = route erc20Workflow erc721Workflow
 
-            return! append (UnwrapSigned event)
-        }
+    fun level update -> route level update |> append

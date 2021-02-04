@@ -1,4 +1,4 @@
-module Signer.Test.``Tezos minter contract test``
+module Signer.``Tezos minter contract test``
 
 open FsUnit.Xunit
 open Newtonsoft.Json.Linq
@@ -40,9 +40,9 @@ let ``Should extract parameters`` () =
         { Amount = 500I
           Destination = "0x850adb2175bfc9c1d5d56cf948203116b976dff3"
           Fees = 5I
-          TokenId = "0x42775d50b7db4768f32d0267b399de8ed7e56700" }
+          Erc20 = "0x42775d50b7db4768f32d0267b399de8ed7e56700" }
 
     let result =
-        Minter.unwrapValue (JToken.Parse(sample))
+        FungibleUnwrappedEventDto.fromJson (JToken.Parse(sample))
 
     result |> should equal expected

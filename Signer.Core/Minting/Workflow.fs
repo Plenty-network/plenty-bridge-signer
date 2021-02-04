@@ -5,8 +5,6 @@ open Signer.Ethereum
 open Signer.Ethereum.Contract
 open Signer.Tezos
 
-type ParamFunction<'a, 'b> = 'a -> FilterLog -> 'b
-
 let erc20Params (dto: ERC20WrapAskedEventDto) (log: FilterLog) =
     { Erc20 = dto.Token
       Amount = dto.Amount

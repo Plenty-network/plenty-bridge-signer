@@ -1,43 +1,57 @@
 module Signer.Ethereum.Multisig
 
-open System.Text
 open Nethereum.Web3
 open Org.BouncyCastle.Utilities.Encoders
 open Signer
 
-type UnwrapParameters = {
-    TokenContract: string
-    Destination: string
-    Amount: bigint
-    OperationId: string
-}
-type EthPack = UnwrapParameters -> byte array DomainResult
+type UnwrapParameters =
+    { TokenContract: string
+      Destination: string
+      Amount: bigint
+      OperationId: string }
 
-let transferCall (web3: Web3) erc20Address destination amount =
+type EthPack = string -> string -> string -> byte array -> byte array DomainResult
+
+
+let private disconnectedWeb3 = Web3()
+
+let erc20TransferCall (p: Erc20UnwrapParameters) =
     let erc20 =
-        web3.Eth.GetContract(Contract.erc20Abi, erc20Address)
+        disconnectedWeb3.Eth.GetContract(Contract.erc20Abi, p.Erc20)
 
     let transfer = erc20.GetFunction("transfer")
 
     let data =
-        transfer.CreateCallInput(destination, amount).Data
+        transfer.CreateCallInput(p.Owner, p.Amount).Data
 
     Hex.Decode(data.[2..])
 
-let transactionHash (web3: Web3) lockingContractAddress (parameters: UnwrapParameters) =
-    asyncResult {
+let erc721SafeTransferCall (lockingContract:string) (p: Erc721UnwrapParameters) =
+
+    let erc721 =
+        disconnectedWeb3.Eth.GetContract(Contract.erc721Abi, p.Erc721)
+
+    let transfer = erc721.GetFunction("safeTransferFrom")
+
+    let data =
+        transfer
+            .CreateCallInput(lockingContract, p.Owner, p.TokenId)
+            .Data
+
+    Hex.Decode(data.[2..])
+
+let transactionHash (web3: Web3) : EthPack =
+    fun (lockingContractAddress:string) (destination: string) (operationId: string) (data: byte []) ->
         let locking =
             web3.Eth.GetContract(Contract.lockingContractAbi, lockingContractAddress)
+        asyncResult {
+            let! hash =
+                locking
+                    .GetFunction("getTransactionHash")
+                    .CallAsync<byte array>(destination, 0, data, operationId)
+                |> Async.AwaitTask
+                |> AsyncResult.ofAsync
+                
 
-        let data =
-            transferCall web3 parameters.TokenContract parameters.Destination parameters.Amount
-
-        let! hash =
-            locking
-                .GetFunction("getTransactionHash")
-                .CallAsync<byte array>(parameters.Destination, 0, data, parameters.OperationId)
-            |> Async.AwaitTask
-            |> AsyncResult.ofAsync
-            |> AsyncResult.catch (fun err -> err.Message)
-        return hash
-    }
+            return hash
+        }

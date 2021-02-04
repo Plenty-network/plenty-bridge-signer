@@ -1,5 +1,5 @@
 [<RequireQualifiedAccess>]
-module Signer.Ethereum.Signer
+module Signer.Ethereum.Crypto
 
 open Nethereum.Signer
 open Nichelson

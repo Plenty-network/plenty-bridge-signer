@@ -3,7 +3,6 @@ module Signer.``Tezos Multisig test``
 open Netezos.Keys
 open Nichelson
 open FsUnit.Xunit
-open Nichelson.Contract
 open Xunit
 open Signer.Tezos
 
@@ -71,7 +70,7 @@ let ``Should pack mint nft`` () =
 [<Fact>]
 let ``Should sign`` () =
     async {
-        let signer = Signer.memorySigner key
+        let signer = Crypto.memorySigner key
 
         let! signature =
             Multisig.packMintErc20 target mintErc20

@@ -117,7 +117,7 @@ let configureSigner (services: IServiceCollection) (configuration: IConfiguratio
             s.GetService<IAmazonKeyManagementService>()
 
         let keyId = configuration.["AWS:TezosKeyId"]
-        Signer.awsSigner kms keyId :> obj
+        Crypto.awsSigner kms keyId :> obj
 
     let service =
         match signerType with
@@ -128,7 +128,7 @@ let configureSigner (services: IServiceCollection) (configuration: IConfiguratio
             ServiceDescriptor(typeof<TezosSigner>, createAwsSigner, ServiceLifetime.Singleton)
         | SignerType.Memory ->
             let key = configuration.["Tezos:Signer:Key"]
-            ServiceDescriptor(typeof<TezosSigner>, Signer.memorySigner (Key.FromBase58 key))
+            ServiceDescriptor(typeof<TezosSigner>, Crypto.memorySigner (Key.FromBase58 key))
         | v -> failwith (sprintf "Unknown signer type: %A" v)
 
     services.Add(service)

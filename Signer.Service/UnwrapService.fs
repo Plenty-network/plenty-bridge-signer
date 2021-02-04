@@ -12,6 +12,7 @@ open Signer
 open Signer.Configuration
 open Signer.EventStore
 open Signer.State.LiteDB
+open Signer.Tezos
 open Signer.Unwrap
 open TzWatch.Domain
 open TzWatch.Sync
@@ -76,22 +77,21 @@ type UnwrapService(logger: ILogger<UnwrapService>,
         logger.LogInformation("Resume tezos watch at level {}", lastBlock)
 
         let pack =
-            Ethereum.Multisig.transactionHash web3 ethConfiguration.LockingContract
+            Ethereum.Multisig.transactionHash web3
 
         let workflow =
             Unwrap.workflow signer pack ethConfiguration.LockingContract store.Append
 
         let parameters =
-            { Contract = (ContractAddress.createUnsafe tezosConfiguration.MinterContract)
-              Interests = [ EntryPoint "unwrap" ]
-              Confirmations = 0u }
+            Events.subscription tezosConfiguration.MinterContract (uint tezosConfiguration.Node.Confirmations)
+
 
         let poller =
             SyncNode(tezosRpc, tezosConfiguration.Node.ChainId)
 
         let apply = apply workflow
-        
-        Subscription.run poller (Height (int lastBlock+1)) parameters
+
+        Subscription.run poller (Height(int lastBlock + 1)) parameters
         |> AsyncSeq.iterAsync (fun { BlockHeader = header
                                      Updates = updates } ->
             async {
@@ -101,8 +101,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
                 let! result = apply header.Level updates
 
                 match result with
-                | Ok level ->
-                    state.PutTezosLevel(level)
+                | Ok level -> state.PutTezosLevel(level)
                 | Error err -> return raise (ApplicationException(err))
             })
 
@@ -129,7 +128,7 @@ let configureSigner (services: IServiceCollection) (configuration: IConfiguratio
             let key =
                 EthECKey(configuration.["Ethereum:Signer:Key"])
 
-            let signer = Signer.Ethereum.Signer.memorySigner key
+            let signer = Signer.Ethereum.Crypto.memorySigner key
 
             ServiceDescriptor(typeof<EthereumSigner>, signer)
         | v -> failwith (sprintf "Unknown signer type: %A" v)
