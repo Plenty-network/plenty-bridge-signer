@@ -7,6 +7,7 @@
     <Compile Include="Result.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Json.fs" />
+    <Compile Include="Secp256K1.fs" />
     <Compile Include="Tezos\Keys.fs" />
     <Compile Include="Tezos\Multisig.fs" />
     <Compile Include="Tezos\Crypto.fs" />
@@ -14,6 +15,7 @@
     <Compile Include="Ethereum\Contract.fs" />
     <Compile Include="Ethereum\Watcher.fs" />
     <Compile Include="Ethereum\Multisig.fs" />
+    <Compile Include="Ethereum\Keys.fs" />
     <Compile Include="Ethereum\Crypto.fs" />
     <Compile Include="Minting\Workflow.fs" />
     <Compile Include="Unwrap\Workflow.fs" />

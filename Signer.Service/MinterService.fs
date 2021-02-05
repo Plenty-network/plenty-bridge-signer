@@ -116,7 +116,7 @@ let configureSigner (services: IServiceCollection) (configuration: IConfiguratio
         let kms =
             s.GetService<IAmazonKeyManagementService>()
 
-        let keyId = configuration.["AWS:TezosKeyId"]
+        let keyId = configuration.["Tezos:Signer:KeyId"]
         Crypto.awsSigner kms keyId :> obj
 
     let service =

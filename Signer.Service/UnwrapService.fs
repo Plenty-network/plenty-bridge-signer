@@ -1,6 +1,7 @@
 module Signer.Worker.Unwrap
 
 open System
+open Amazon.KeyManagementService
 open FSharp.Control
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
@@ -13,6 +14,7 @@ open Signer.Configuration
 open Signer.EventStore
 open Signer.State.LiteDB
 open Signer.Tezos
+open Signer.Ethereum
 open Signer.Unwrap
 open TzWatch.Domain
 open TzWatch.Sync
@@ -114,16 +116,16 @@ let configureSigner (services: IServiceCollection) (configuration: IConfiguratio
             .GetSection("Ethereum:Signer:Type")
             .Get<SignerType>()
 
-    (*let createAwsSigner(s: IServiceProvider) =
+    let createAwsSigner(s: IServiceProvider) =
         let kms = s.GetService<IAmazonKeyManagementService>()
-        let keyId = configuration.["AWS:EthKeyId"]
-        Signer.awsSigner kms keyId :> obj*)
+        let keyId = configuration.["Ethereum:Signer:KeyId"]
+        Crypto.awsSigner kms keyId :> obj
 
     let service =
         match signerType with
-        | SignerType.AWS -> failwith "Not implemented"
-        (*services.AddAWSService<IAmazonKeyManagementService>() |> ignore
-            ServiceDescriptor(typeof<TezosSigner>, createAwsSigner, ServiceLifetime.Singleton)*)
+        | SignerType.AWS -> 
+            services.AddAWSService<IAmazonKeyManagementService>() |> ignore
+            ServiceDescriptor(typeof<EthereumSigner>, createAwsSigner, ServiceLifetime.Singleton)
         | SignerType.Memory ->
             let key =
                 EthECKey(configuration.["Ethereum:Signer:Key"])

@@ -9,6 +9,7 @@
     <Compile Include="State.Test.fs" />
     <Compile Include="Ethereum.Multisig.Test.fs" />
     <Compile Include="TezosKey.Test.fs" />
+    <Compile Include="EthereumKey.Test.fs" />
     <Content Include="sample\pub.der">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

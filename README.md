@@ -25,9 +25,16 @@ Change the SignerType to `AWS` in app settings, and add the proper AWS configura
 "AWS": {
     "Profile": "<profile you configured>",
     "Region": "<region to use>",
-    "TezosKeyId": "<KMS key id to use>"
-    "EthKeyId": "<KMS key id to use>"
   }
+```
+KeyId, in signer configuration, should be specified :
+```
+"Tezos": {
+    "Signer":{
+        "Type":"AWS",
+        "KeyID":"<your key id>"
+    }
+}
 ```
 
 ### Profiles

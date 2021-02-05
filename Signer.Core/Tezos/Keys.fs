@@ -3,27 +3,14 @@ module Signer.Tezos.Keys
 
 open Netezos.Keys
 open Nethereum.Signer.Crypto
-open Org.BouncyCastle.Asn1
-open Org.BouncyCastle.Asn1.Sec
-open Org.BouncyCastle.Asn1.X509
 open Signer
+open Signer.Core
 
 
 module Secp256k1 =
-
     let keyFromSpki (bytes: byte []) =
-        let spki =
-            SubjectPublicKeyInfo.GetInstance(Asn1Object.FromByteArray(bytes))
-
-        let curve =
-            SecNamedCurves
-                .GetByOid(spki.AlgorithmID.Parameters :?> DerObjectIdentifier)
-                .Curve
-
-        let p =
-            curve.DecodePoint(spki.PublicKeyData.GetBytes())
-
-        PubKey.FromBytes(p.GetEncoded(true), ECKind.Secp256k1)
+        let p = Secp256k1.publicKeyFromSpki bytes
+        PubKey.FromBytes(p, ECKind.Secp256k1)
 
     let signatureFromDer (der: byte []) =
         let parsed =
