@@ -5,21 +5,21 @@ open Nichelson
 open Nichelson.Contract
 open TzWatch.Domain
 
-type FungibleUnwrappedEventDto =
+type ERC20UnwrappedEventDto =
     { Amount: bigint
       Destination: string
       Fees: bigint
       Erc20: string }
 
-type NftUnwrappedEventDto =
+type ERC721UnwrappedEventDto =
     { TokenId: bigint
       Destination: string
       Erc721: string }
 
 [<RequireQualifiedAccess>]
-module FungibleUnwrappedEventDto =
+module ERC20UnwrappedEventDto =
 
-    let entryPointName = "unwrap_fungible"
+    let entryPointName = "unwrap_erc20"
 
     let private unwrapType =
         ContractParameters "(pair
@@ -41,11 +41,13 @@ module FungibleUnwrappedEventDto =
           Erc20 = Encoder.byteToHex erc20 }
 
 [<RequireQualifiedAccess>]
-module NftUnwrappedEventDto =
-    
-    let private unwrapType = ContractParameters "(pair (pair (bytes %destination) (bytes %erc_721)) (nat %token_id))"
-    let entryPointName = "unwrap_nft"
-    
+module ERC721UnwrappedEventDto =
+
+    let private unwrapType =
+        ContractParameters "(pair (pair (bytes %destination) (bytes %erc_721)) (nat %token_id))"
+
+    let entryPointName = "unwrap_erc721"
+
     let fromJson (call: JToken) =
         let expr =
             Nichelson.Parser.Json.Expression.load call
@@ -63,16 +65,18 @@ module Events =
     let subscription contract confirmations =
         { Contract = (ContractAddress.createUnsafe contract)
           Interests =
-              [ EntryPoint FungibleUnwrappedEventDto.entryPointName
-                EntryPoint NftUnwrappedEventDto.entryPointName ]
+              [ EntryPoint ERC20UnwrappedEventDto.entryPointName
+                EntryPoint ERC721UnwrappedEventDto.entryPointName ]
           Confirmations = confirmations }
 
-    let (|FungibleUnwrapped|_|) =
+    let (|Erc20Unwrapped|_|) =
         function
-        | EntryPointCall { Entrypoint = "unwrap_fungible" ; Parameters = token } -> Some (FungibleUnwrappedEventDto.fromJson token)
+        | EntryPointCall { Entrypoint = e; Parameters = token } when e = ERC20UnwrappedEventDto.entryPointName ->
+            Some(ERC20UnwrappedEventDto.fromJson token)
         | _ -> None
-        
-    let (|NftUnwrapped|_|) =
+
+    let (|Erc721Unwrapped|_|) =
         function
-        | EntryPointCall { Entrypoint = "unwrap_nft" ; Parameters = token } -> Some (NftUnwrappedEventDto.fromJson token)
+        | EntryPointCall { Entrypoint = e; Parameters = token } when e = ERC721UnwrappedEventDto.entryPointName ->
+            Some(ERC721UnwrappedEventDto.fromJson token)
         | _ -> None

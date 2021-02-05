@@ -26,19 +26,19 @@ let private route (erc20Workflow: Erc20Workflow)
                       =
 
     match value with
-    | FungibleUnwrapped dto ->
+    | Erc20Unwrapped dto ->
         let p =
             { Amount = dto.Amount
               Owner = dto.Destination
-              Erc20 = dto.Erc20
+              ERC20 = dto.Erc20
               OperationId = updateIdToString id }
 
         erc20Workflow level p
-    | NftUnwrapped dto ->
+    | Erc721Unwrapped dto ->
         let p =
             { TokenId = dto.TokenId
               Owner = dto.Destination
-              Erc721 = dto.Erc721
+              ERC721 = dto.Erc721
               OperationId = updateIdToString id }
 
         erc721Workflow level p

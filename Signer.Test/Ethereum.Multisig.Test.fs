@@ -9,74 +9,132 @@ open Signer.Ethereum
 open Signer.Ethereum.Multisig
 open Xunit
 
-let web3 = Web3("https://localhost:8545")
+let web3 = Web3("http://localhost:8545")
+
+let key =
+    EthECKey("b92d594b7433a2e7eaeae7ac66709cbdf0bb569f088028171936540f2ca62193")
+
+let erc20Params: Erc20UnwrapParameters =
+    { ERC20 = "0xD368146a3BFF47E0fA8cadA1FfE00F6738374721"
+      Owner = "0x8178C9C1BE2A48DCf9ea8AD7A99577DA7a283de5"
+      Amount = 10I
+      OperationId = "ooh6Bz4sLxKZ9dWZ5BVpJu8Snn1qZ7zse416gAUhiR5w2m1wSEd/24" }
+
+let erc721Params: Erc721UnwrapParameters =
+    { ERC721 = "0xA71007e73288789D4F430D5B685182Fe84189094"
+      Owner = "0x8178C9C1BE2A48DCf9ea8AD7A99577DA7a283de5"
+      TokenId = 1337I
+      OperationId = "ooh6Bz4sLxKZ9dWZ5BVpJu8Snn1qZ7zse416gAUhiR5w2m1wSEd/24" }
+
+let lockingContract =
+    "0x9b51c20109eA7adF2807849C616F202D58991c30"
 
 [<Fact>]
 let ``Should create erc20 transfer call`` () =
-    let data =
-        erc20TransferCall
-            { Erc20 = "0x42775d50b7Db4768f32d0267b399DE8ED7e56700"
-              Owner = "0x95ADDFfF52B727E0d2317a2f1f255350f743813E"
-              Amount = 10I
-              OperationId = "ooLfc6nEYiHH7jUfGHLahCuPS7YkQRyNNt3Thamoy24664EFtDK" }
+    let data = erc20TransferCall erc20Params
 
     data
     |> Hex.ToHexString
     |> should
         equal
-           "a9059cbb00000000000000000000000095addfff52b727e0d2317a2f1f255350f743813e000000000000000000000000000000000000000000000000000000000000000a"
+           "a9059cbb0000000000000000000000008178c9c1be2a48dcf9ea8ad7a99577da7a283de5000000000000000000000000000000000000000000000000000000000000000a"
 
 [<Fact>]
-let ``Should create transaction hash`` () =
-    asyncResult {
+let ``Should create erc721 transfer call`` () =
+    let data =
+        erc721SafeTransferCall lockingContract erc721Params
 
-        let p: Erc20UnwrapParameters =
-            { Erc20 = "0x42775d50b7Db4768f32d0267b399DE8ED7e56700"
-              Owner = "0x95ADDFfF52B727E0d2317a2f1f255350f743813E"
-              Amount = 10I
-              OperationId = "ooLfc6nEYiHH7jUfGHLahCuPS7YkQRyNNt3Thamoy24664EFtDK" }
+    data
+    |> Hex.ToHexString
+    |> should
+        equal
+           "42842e0e0000000000000000000000009b51c20109ea7adf2807849c616f202d58991c300000000000000000000000008178c9c1be2a48dcf9ea8ad7a99577da7a283de50000000000000000000000000000000000000000000000000000000000000539"
 
+[<Fact>]
+let ``Should create erc20 transaction hash`` () =
+    async {
 
         let! hash =
             transactionHash
                 web3
-                "0x6e3d2fF2C4727B9E7F50D9604D7D661de2Ac2c46"
-                p.Erc20
-                p.OperationId
-                (erc20TransferCall p)
+                lockingContract
+                erc20Params.Owner
+                erc20Params.OperationId
+                (erc20TransferCall erc20Params)
 
-        hash
-        |> Hex.ToHexString
-        |> should equal "a74ceb8c9008aaa095c1169df3e0619ac619c564e1406426617f7c52cbe435fc"
+        match hash with
+        | Ok hash ->
+            hash
+            |> Hex.ToHexString
+            |> should equal "0b5c63265621cbbf9f65dad95644d262ae02976bf96936462cb088b8ef6b245b"
+        | Error err -> failwith err
     }
-    |> Async.Ignore
-
 
 [<Fact>]
-let ``Should sign`` () =
-    asyncResult {
-        let key =
-            EthECKey("92e8c95392686c2b21be66f4fbd54bac1906d75a1ba0d83a4f012095c051671c")
-
-        let p: Erc20UnwrapParameters =
-            { Erc20 = "0x42775d50b7Db4768f32d0267b399DE8ED7e56700"
-              Owner = "0x95ADDFfF52B727E0d2317a2f1f255350f743813E"
-              Amount = 10I
-              OperationId = "ooLfc6nEYiHH7jUfGHLahCuPS7YkQRyNNt3Thamoy24664EFtDK" }
+let ``Should create erc721 transaction hash`` () =
+    async {
 
         let! hash =
             transactionHash
                 web3
-                "0x6e3d2fF2C4727B9E7F50D9604D7D661de2Ac2c46"
-                p.Erc20
-                p.OperationId
-                (erc20TransferCall p)
+                lockingContract
+                erc721Params.Owner
+                erc721Params.OperationId
+                (erc721SafeTransferCall lockingContract erc721Params)
 
-        let! r = Crypto.memorySigner(key).Sign(hash)
-
-        r
-        |> should
-            equal
-               "0x8841ed8de5efebb9f52cb5b3eaa1c5b70e9fbd381f177e4ed4ce6bcd309ac5cb1f5eea6881b14b4fc44e5a5e5198068173576148a6b123b8c9c73f7fb68d66ff1b"
+        match hash with
+        | Ok hash ->
+            hash
+            |> Hex.ToHexString
+            |> should equal "eb1b818cdd95e71d912c054bf82604a57540ec9d070ec2883ff26be321f91a83"
+        | Error err -> failwith err
     }
-    |> Async.Ignore
+
+[<Fact>]
+let ``Should sign erc20 unwrap`` () =
+    async {
+        let sign =
+            Crypto.memorySigner(key).Sign |> AsyncResult.bind
+
+        let! r =
+            transactionHash
+                web3
+                lockingContract
+                erc20Params.Owner
+                erc20Params.OperationId
+                (erc20TransferCall erc20Params)
+            |> sign
+
+        match r with
+        | Ok r ->
+            r
+            |> should
+                equal
+                   "0x37fcbd4932b8a314a505e6625ab502b803aeba7a345b44cf193e260d20c2158a06cebf5321801584d319e58455f2e66b74f4f711e7de1872ef8902d150abe6781c"
+        | Error err -> failwith err
+    }
+
+
+[<Fact>]
+let ``Should sign erc721 unwrap`` () =
+    async {
+        let sign =
+            Crypto.memorySigner(key).Sign |> AsyncResult.bind
+
+        let! r =
+            transactionHash
+                web3
+                lockingContract
+                erc721Params.Owner
+                erc721Params.OperationId
+                (erc721SafeTransferCall lockingContract erc721Params)
+            |> sign
+
+        match r with
+        | Ok r ->
+            r
+            |> should
+                equal
+                   "0x652b55206a7624d0652f8472400be68543b9c84fc1ceec0cf3435106cc1220cc1ab8134e1b87123cdcec069094e33b2c438d330be16254d151a0b16da14f95fe1c"
+        | Error err -> failwith err
+    }

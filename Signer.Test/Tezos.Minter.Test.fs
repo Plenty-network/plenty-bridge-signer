@@ -5,44 +5,52 @@ open Newtonsoft.Json.Linq
 open Signer.Tezos
 open Xunit
 
-let sample = """{
-  "prim": "Pair",
-  "args": [
-    {
-      "prim": "Pair",
-      "args": [
-        {
-          "int": "500"
-        },
-        {
-          "bytes": "850adb2175bfc9c1d5d56cf948203116b976dff3"
-        }
-      ]
-    },
-    {
-      "prim": "Pair",
-      "args": [
-        {
-          "int": "5"
-        },
-        {
-          "bytes": "42775d50b7db4768f32d0267b399de8ed7e56700"
-        }
-      ]
-    }
-  ]
-}"""
+let sampleERC20 = """ { "prim": "Pair",
+                    "args":
+                      [ { "prim": "Pair",
+                          "args":
+                            [ { "int": "100" },
+                              { "bytes":
+                                  "8178c9c1be2a48dcf9ea8ad7a99577da7a283de5" } ] },
+                        { "prim": "Pair",
+                          "args":
+                            [ { "bytes":
+                                  "d368146a3bff47e0fa8cada1ffe00f6738374721" },
+                              { "int": "5" } ] } ] }"""
+
+let sampleERC721 = """{ "prim": "Pair",
+                    "args":
+                      [ { "prim": "Pair",
+                          "args":
+                            [ { "bytes":
+                                  "8178c9c1be2a48dcf9ea8ad7a99577da7a283de5" },
+                              { "bytes":
+                                  "a71007e73288789d4f430d5b685182fe84189094" } ] },
+                        { "int": "1337" } ] }"""
 
 [<Fact>]
-let ``Should extract parameters`` () =
+let ``Should extract erc20 parameters`` () =
     let expected =
 
-        { Amount = 500I
-          Destination = "0x850adb2175bfc9c1d5d56cf948203116b976dff3"
+        { Amount = 100I
+          Destination = "0x8178c9c1be2a48dcf9ea8ad7a99577da7a283de5"
           Fees = 5I
-          Erc20 = "0x42775d50b7db4768f32d0267b399de8ed7e56700" }
+          Erc20 = "0xd368146a3bff47e0fa8cada1ffe00f6738374721" }
 
     let result =
-        FungibleUnwrappedEventDto.fromJson (JToken.Parse(sample))
+        ERC20UnwrappedEventDto.fromJson (JToken.Parse(sampleERC20))
+
+    result |> should equal expected
+
+[<Fact>]
+let ``Should extract erc721 parameters`` () =
+    let expected =
+
+        { TokenId = 1337I
+          Destination = "0x8178c9c1be2a48dcf9ea8ad7a99577da7a283de5"
+          Erc721 = "0xa71007e73288789d4f430d5b685182fe84189094" }
+
+    let result =
+        ERC721UnwrappedEventDto.fromJson (JToken.Parse(sampleERC721))
 
     result |> should equal expected

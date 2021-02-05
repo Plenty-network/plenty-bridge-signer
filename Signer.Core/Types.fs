@@ -66,13 +66,13 @@ type ErcUnwrap<'T> =
 type Erc20UnwrapParameters =
     { Amount: bigint
       Owner: string
-      Erc20: string
+      ERC20: string
       OperationId: string }
 
 type Erc721UnwrapParameters =
     { TokenId: bigint
       Owner: string
-      Erc721: string
+      ERC721: string
       OperationId: string }
 
 type DomainEvent =
