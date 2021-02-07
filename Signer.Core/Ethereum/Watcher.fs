@@ -78,6 +78,7 @@ module Watcher =
                     Async.Parallel [ r; r' ]
                     |> Async.map Seq.concat
                     |> Async.map (Seq.groupBy (fun e -> e.Log.BlockNumber))
+                    |> Async.map (Seq.sortBy (fun (e, _) -> e.Value))
 
                 for change in changes do
                     yield change
