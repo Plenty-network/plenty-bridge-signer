@@ -58,7 +58,7 @@ let ``Should create erc20 transaction hash`` () =
             transactionHash
                 web3
                 lockingContract
-                erc20Params.Owner
+                erc20Params.ERC20
                 erc20Params.OperationId
                 (erc20TransferCall erc20Params)
 
@@ -66,7 +66,7 @@ let ``Should create erc20 transaction hash`` () =
         | Ok hash ->
             hash
             |> Hex.ToHexString
-            |> should equal "0b5c63265621cbbf9f65dad95644d262ae02976bf96936462cb088b8ef6b245b"
+            |> should equal "741814a83e14126c15e2a07fc42e52ca10e70c1355a13b468f5e75cec1ba99e3"
         | Error err -> failwith err
     }
 
@@ -78,7 +78,7 @@ let ``Should create erc721 transaction hash`` () =
             transactionHash
                 web3
                 lockingContract
-                erc721Params.Owner
+                erc721Params.ERC721
                 erc721Params.OperationId
                 (erc721SafeTransferCall lockingContract erc721Params)
 
@@ -86,7 +86,7 @@ let ``Should create erc721 transaction hash`` () =
         | Ok hash ->
             hash
             |> Hex.ToHexString
-            |> should equal "eb1b818cdd95e71d912c054bf82604a57540ec9d070ec2883ff26be321f91a83"
+            |> should equal "aa0df064ceb6fcceddbc3ea154b6cb1ec6c717ca3d7cd320a04b376ec5ef1ba4"
         | Error err -> failwith err
     }
 
