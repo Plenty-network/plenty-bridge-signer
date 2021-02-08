@@ -5,3 +5,6 @@ TzWatch.Lib
 FSharp.Core
 FSharpx.Extras
 AWSSDK.Extensions.NETCore.Setup
+Dapper
+Npgsql
+Evolve

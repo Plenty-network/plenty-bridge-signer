@@ -3,6 +3,8 @@ module Indexer.Worker
 open System
 open System.Threading
 open System.Threading.Tasks
+open Indexer.Migration
+open Indexer.State.PostgresqlDB
 open Indexer.Watcher
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
@@ -16,7 +18,8 @@ open Signer.State.LiteDB
 type IpfsConfiguration = { Endpoint: string; KeyName: string }
 
 type IndexerWorker(logger: ILogger<IndexerWorker>,
-                  state: StateLiteDb,
+                  state: StatePG,
+                  migrationService: MigrationService,
                   ipfsConfiguration: IpfsConfiguration,
                   watcher: WatcherService,
                   lifeTime: IHostApplicationLifetime) =
@@ -24,6 +27,19 @@ type IndexerWorker(logger: ILogger<IndexerWorker>,
     let mutable watcherTask: Task<_> option = None
     let cancelToken = new CancellationTokenSource()
 
+    let check (result: AsyncResult<_, string>) =
+        async {
+            let! result = result
+
+            match result with
+            | Ok _ -> return result
+            | Error err ->
+                logger.LogError("Error while starting app: {err}", err)
+                Environment.ExitCode <- 1
+                lifeTime.StopApplication()
+                return result
+        }
+    
     let catch =
         function
         | Choice2Of2 v ->
@@ -39,6 +55,8 @@ type IndexerWorker(logger: ILogger<IndexerWorker>,
     interface IHostedService with
         member this.StartAsync(ct) =
             asyncResult {
+                migrationService.Work
+                let! _ = check watcher.Check
                 let watcherWork =
                     watcher.Work  
                     |> Async.Catch

@@ -4,29 +4,34 @@ open LiteDB
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
-open Signer.State.LiteDB
+open Indexer.State.PostgresqlDB
 open Indexer.Watcher
+open Indexer.Migration
 open Indexer.Worker
+open Npgsql
 
 module Program =
 
     type IServiceCollection with
         member this.AddState(configuration: IConfiguration) =
-            let liteDbPath = configuration.["LiteDB:Path"]
-            
-            let db = new LiteDatabase(sprintf "Filename=%s;Connection=direct" liteDbPath)
-            
-            this.AddSingleton(new StateLiteDb(db))
+            let pgConnectionString = configuration.["Postgresql:ConnectionString"]
+            let pgConnection = new NpgsqlConnection(pgConnectionString)
+            this.AddSingleton(new StatePG(pgConnection))
 
-       
-
+    type IServiceCollection with
+        member this.AddPgConnection(configuration: IConfiguration) =
+            let pgConnectionString = configuration.["Postgresql:ConnectionString"]
+            this.AddSingleton(new NpgsqlConnection(pgConnectionString))
+    
     let createHostBuilder args =
         Host
             .CreateDefaultBuilder(args)
             .ConfigureServices(fun hostContext services ->
                 services
                     .AddState(hostContext.Configuration)
+                    .AddPgConnection(hostContext.Configuration)
                     .AddWatcher(hostContext.Configuration)
+                    .AddMigration()
                     .AddWorker(hostContext.Configuration)
                 |> ignore)
 

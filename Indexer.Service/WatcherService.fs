@@ -2,6 +2,7 @@ module Indexer.Watcher
 
 open System
 open FSharp.Control
+open Indexer.State.PostgresqlDB
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
@@ -40,7 +41,12 @@ type TezosConfiguration =
 type WatcherWorkflow = EthEventLog -> DomainResult<bigint>
 
 let workflow: WatcherWorkflow =
-    fun logEvent -> AsyncResult.ofSuccess logEvent.Log.BlockNumber.Value
+    fun logEvent ->
+        match logEvent.Event with
+        | Erc20Wrapped dto ->
+            AsyncResult.ofSuccess logEvent.Log.BlockNumber.Value
+        | Erc721Wrapped dto -> 
+            AsyncResult.ofSuccess logEvent.Log.BlockNumber.Value
 (*
         let toEvent =
             toEvent logEvent.Log.BlockNumber.Value target
@@ -57,7 +63,7 @@ type WatcherService(logger: ILogger<WatcherService>,
                     web3: Web3,
                     ethConfiguration: EthereumConfiguration,
                     tezosConfiguration: TezosConfiguration,
-                    state: StateLiteDb) =
+                    state: StatePG) =
 
     let mutable startingBlock: bigint = 0I
 
@@ -66,7 +72,7 @@ type WatcherService(logger: ILogger<WatcherService>,
             ("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
 
         let applyOne event =
-            logger.LogDebug("Processing {i}:{h}", event.Log.TransactionIndex, event.Log.TransactionHash)
+            logger.LogDebug("Processing {i}:{h}:{h}", event.Log.LogIndex, event.Log.BlockHash, event.Log.TransactionHash)
             workflow event
 
         let rec f elements =
