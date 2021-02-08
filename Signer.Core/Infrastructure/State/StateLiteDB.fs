@@ -32,14 +32,15 @@ module LiteDB =
             .Upsert(toBson id value)
 
     type StateLiteDb(db: LiteDatabase) =
-
         member this.PutEthereumLevel(v: bigint) =
-            save db ethereumLevelId (v.ToByteArray()) |> ignore
+            save db ethereumLevelId (v.ToByteArray())
+            |> ignore
+
             ()
 
         member this.GetEthereumLevel() =
             find db (fun v -> v.AsBinary |> bigint) ethereumLevelId
-            
+
         member this.PutTezosLevel(v: bigint) =
             save db tezosLevelId (v.ToByteArray()) |> ignore
             ()
@@ -51,6 +52,7 @@ module LiteDB =
             member this.PutHead(Cid value) =
                 save db eventStoreHeadId (Encoding.UTF8.GetBytes value)
                 |> ignore
+
                 ()
 
             member this.GetHead() =

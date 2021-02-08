@@ -6,6 +6,7 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Netezos.Rpc
 open Nethereum.Web3
+open Signer.EventStore
 open Signer.State.LiteDB
 
 [<CLIMutable>]
@@ -40,12 +41,13 @@ type TezosConfiguration =
 
 type IServiceCollection with
     member this.AddState(configuration: IConfiguration) =
-        let liteDbPath = configuration.["LiteDB:Path"]
+        let stateFactory (_: IServiceProvider) =
+            let liteDbPath = configuration.["LiteDB:Path"]
+            let db = new LiteDatabase(sprintf "Filename=%s;Connection=direct" liteDbPath)
+            new StateLiteDb(db) :> obj
 
-        let db =
-            new LiteDatabase(sprintf "Filename=%s;Connection=direct" liteDbPath)
-
-        this.AddSingleton(new StateLiteDb(db))
+        this.Add(ServiceDescriptor(typeof<StateLiteDb>, stateFactory, ServiceLifetime.Singleton))
+        this.AddSingleton<EventStoreState>(fun x -> x.GetRequiredService<StateLiteDb>() :> EventStoreState)
 
     member this.AddConfiguration(configuration: IConfiguration) =
         this
