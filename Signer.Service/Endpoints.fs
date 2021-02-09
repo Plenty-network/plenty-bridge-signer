@@ -3,6 +3,7 @@ module Signer.Endpoints
 open Giraffe
 open Giraffe.EndpointRouting
 open Signer
+open Signer.Configuration
 open Signer.EventStore
 open Signer.IPFS
 open Signer.State.LiteDB
@@ -35,19 +36,23 @@ let keysHandler: HttpHandler =
         task {
             let tezSigner = ctx.GetService<TezosSigner>()
             let ethSigner = ctx.GetService<EthereumSigner>()
+            let ipfsStore = ctx.GetService<IpfsClient>()
+            let conf = ctx.GetService<IpfsConfiguration>()
 
             let! tezosKey =
                 tezSigner.PublicAddress()
                 |> AsyncResult.map (fun e -> e.GetBase58())
 
             let! ethKey = ethSigner.PublicAddress()
-
+            
+            
+            let! ipfs = ipfsStore.Key.Find(conf.KeyName)
 
 
             let p =
-                match tezosKey, ethKey with
-                | Ok t, Ok e -> {| TezosKey = t; EthereumKey = e |}
-                | _, _ -> failwith "Error retrieving keys"
+                match tezosKey, ethKey, ipfs with
+                | Ok t, Ok e, Ok i -> {| tezosKey = t; ethereumKey = e ; ipnsKey = i.Id|}
+                | _, _,_ -> failwith "Error retrieving keys"
 
             return! ctx.WriteJsonAsync p
         })

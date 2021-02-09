@@ -92,6 +92,21 @@ type Key(client: HttpClient) =
             return v
         }
 
+    member this.Find(name) =
+        asyncResult {
+            let! response =
+                client.PostAsync("key/list?l=false", new StringContent(""))
+                |> Http.mapResponse KeysResponse.Parse
+
+            let v =
+                response.Keys
+                |> Seq.map (fun v -> { Name = v.Name; Id = v.Id })
+                |> Seq.toList
+                |> Seq.tryFind (fun v -> v.Name = name)
+                |> AsyncResult.ofOption "Key not found"
+
+            return! v
+        }
 
 type Name(client: HttpClient) =
     member this.Publish((Cid cid), ?key: string, ?lifetime: string, ?ttl: string) =
@@ -130,6 +145,7 @@ type Dag(client: HttpClient) =
             let query = HttpUtility.ParseQueryString ""
             query.["format"] <- defaultArg format "dag-cbor"
             query.["input-enc"] <- defaultArg encoding "json"
+
             query.["pin"] <- (defaultArg pin true)
                 .ToString()
                 .ToLowerInvariant()

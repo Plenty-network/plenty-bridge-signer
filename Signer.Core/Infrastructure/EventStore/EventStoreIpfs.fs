@@ -7,6 +7,7 @@ open Signer.IPFS
 type private Message =
     | Append of DomainEvent * AsyncReplyChannel<Result<EventId * DomainEvent, string>>
     | GetHead of AsyncReplyChannel<Cid option>
+    | GetKey of AsyncReplyChannel<IpfsKey>
 
 type EventStoreState =
     abstract PutHead: Cid -> unit
@@ -195,6 +196,9 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
                     | GetHead rc ->
                         rc.Reply head
                         do! messageLoop head
+                    | GetKey rc ->
+                        rc.Reply key
+                        do! messageLoop head
 
                 }
 
@@ -203,13 +207,7 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
 
     static member Create(client: IpfsClient, keyName: string, state: EventStoreState) =
         asyncResult {
-            let! keys = client.Key.List()
-
-            let! key =
-                keys
-                |> Seq.tryFind (fun k -> k.Name = keyName)
-                |> AsyncResult.ofOption "Key not found"
-
+            let! key = client.Key.Find(keyName)
             return EventStoreIpfs(client, state, key)
         }
 
@@ -220,4 +218,10 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
         async {
             let! head = mailbox.PostAndAsyncReply(GetHead)
             return! publish head
+        }
+        
+    member this.GetKey() =
+        async {
+            let! key= mailbox.PostAndAsyncReply(GetKey)
+            return key
         }

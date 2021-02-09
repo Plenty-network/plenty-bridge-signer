@@ -7,6 +7,7 @@ open Microsoft.Extensions.DependencyInjection
 open Netezos.Rpc
 open Nethereum.Web3
 open Signer.EventStore
+open Signer.IPFS
 open Signer.State.LiteDB
 
 [<CLIMutable>]
@@ -38,16 +39,29 @@ type TezosConfiguration =
       InitialLevel: int
       Node: TezosNodeConfiguration }
 
+[<CLIMutable>]
+type IpfsConfiguration = { Endpoint: string; KeyName: string }
 
 type IServiceCollection with
     member this.AddState(configuration: IConfiguration) =
         let stateFactory (_: IServiceProvider) =
             let liteDbPath = configuration.["LiteDB:Path"]
-            let db = new LiteDatabase(sprintf "Filename=%s;Connection=direct" liteDbPath)
+
+            let db =
+                new LiteDatabase(sprintf "Filename=%s;Connection=direct" liteDbPath)
+
             new StateLiteDb(db) :> obj
 
+
         this.Add(ServiceDescriptor(typeof<StateLiteDb>, stateFactory, ServiceLifetime.Singleton))
-        this.AddSingleton<EventStoreState>(fun x -> x.GetRequiredService<StateLiteDb>() :> EventStoreState)
+
+        this
+            .AddSingleton<EventStoreState>(fun x -> x.GetRequiredService<StateLiteDb>() :> EventStoreState)
+            .AddSingleton<IpfsClient>(fun x ->
+                let conf =
+                    x.GetRequiredService<IpfsConfiguration>()
+
+                IpfsClient(conf.Endpoint))
 
     member this.AddConfiguration(configuration: IConfiguration) =
         this
@@ -57,6 +71,9 @@ type IServiceCollection with
             .AddSingleton(configuration
                 .GetSection("Ethereum")
                 .Get<EthereumConfiguration>())
+            .AddSingleton(configuration
+                .GetSection("IPFS")
+                .Get<IpfsConfiguration>())
 
     member this.AddWeb3() =
         let web3Factory (s: IServiceProvider) =

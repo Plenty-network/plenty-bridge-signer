@@ -7,6 +7,7 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
+open Signer.Configuration
 open Signer.EventStore
 open Signer.IPFS
 open Signer.State.LiteDB
@@ -14,11 +15,9 @@ open Signer.Worker.Minting
 open Signer.Worker.Publish
 open Signer.Worker.Unwrap
 
-[<CLIMutable>]
-type IpfsConfiguration = { Endpoint: string; KeyName: string }
-
 type SignerWorker(logger: ILogger<SignerWorker>,
                   state: StateLiteDb,
+                  ipfsClient: IpfsClient,
                   ipfsConfiguration: IpfsConfiguration,
                   minter: MinterService,
                   publish: PublishService,
@@ -71,7 +70,7 @@ type SignerWorker(logger: ILogger<SignerWorker>,
                     logHead cidOption
 
                     let eventStoreIpfsResultAsync =
-                        EventStoreIpfs.Create(IpfsClient(ipfsConfiguration.Endpoint), ipfsConfiguration.KeyName, state)
+                        EventStoreIpfs.Create(ipfsClient, ipfsConfiguration.KeyName, state)
 
                     check (eventStoreIpfsResultAsync)
 
@@ -117,5 +116,4 @@ type SignerWorker(logger: ILogger<SignerWorker>,
 type IServiceCollection with
     member this.AddSigner(conf: IConfiguration) =
         this
-            .AddSingleton(conf.GetSection("IPFS").Get<IpfsConfiguration>())
             .AddHostedService<SignerWorker>()
