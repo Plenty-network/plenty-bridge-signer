@@ -5,9 +5,9 @@ source https://nuget.pkg.github.com/bender-labs/index.json
 nuget Nichelson
 nuget TzWatch.Lib
 nuget FSharp.Core
-nuget Microsoft.Extensions.Hosting 5.0.0
-nuget Microsoft.Extensions.Hosting.WindowsServices 3.1.9
-nuget System.Net.NameResolution 4.3.0
+nuget Microsoft.Extensions.Hosting
+nuget Microsoft.Extensions.Hosting.WindowsServices
+nuget System.Net.NameResolution
 nuget FsUnit.xUnit
 nuget Microsoft.NET.Test.Sdk
 nuget xunit.runner.visualstudio
@@ -18,6 +18,7 @@ nuget Nethereum.Web3 3.8.0
 nuget AWSSDK.KeyManagementService 3.5.1.6
 nuget AWSSDK.Extensions.NETCore.Setup 3.3.101
 nuget LiteDB
+nuget Giraffe 5.0.0-rc-6 rc
 nuget Dapper 2.0.78
 nuget Npgsql 5.0.3
 nuget Evolve
