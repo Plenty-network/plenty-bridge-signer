@@ -10,12 +10,12 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Signer.Core\Signer.Core.fsproj" />
+    <ProjectReference Include="..\..\..\signer\src\Signer.Core\Signer.Core.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="db\migrations\**\*.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <Import Project="..\.paket\Paket.Restore.targets" />
+  <Import Project="..\..\..\.paket\Paket.Restore.targets" />
 </Project>

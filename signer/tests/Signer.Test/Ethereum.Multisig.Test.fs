@@ -50,7 +50,7 @@ let ``Should create erc721 transfer call`` () =
         equal
            "42842e0e0000000000000000000000009b51c20109ea7adf2807849c616f202d58991c300000000000000000000000008178c9c1be2a48dcf9ea8ad7a99577da7a283de50000000000000000000000000000000000000000000000000000000000000539"
 
-[<Fact>]
+[<Fact(Skip="Needs an actual ethereum node")>]
 let ``Should create erc20 transaction hash`` () =
     async {
 
@@ -70,7 +70,7 @@ let ``Should create erc20 transaction hash`` () =
         | Error err -> failwith err
     }
 
-[<Fact>]
+[<Fact(Skip="Needs an actual ethereum node")>]
 let ``Should create erc721 transaction hash`` () =
     async {
 
@@ -90,7 +90,7 @@ let ``Should create erc721 transaction hash`` () =
         | Error err -> failwith err
     }
 
-[<Fact>]
+[<Fact(Skip="Needs an actual ethereum node")>]
 let ``Should sign erc20 unwrap`` () =
     async {
         let sign =
@@ -115,7 +115,7 @@ let ``Should sign erc20 unwrap`` () =
     }
 
 
-[<Fact>]
+[<Fact(Skip="Needs an actual ethereum node")>]
 let ``Should sign erc721 unwrap`` () =
     async {
         let sign =

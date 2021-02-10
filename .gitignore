@@ -151,6 +151,10 @@ _TeamCity*
 # DotCover is a Code Coverage Tool
 *.dotCover
 
+# Test coverage files
+coverage.xml
+coverage.*.xml
+
 # NCrunch
 _NCrunch_*
 .*crunch*.local.xml
@@ -457,5 +461,8 @@ Scripts/
 .ionide
 
 ### Project related 
-/Signer.Service/data/
-/Indexer.Service/data/
+/signer/src/Signer.Service/data/
+/indexer/src/Indexer.Service/data/
+
+# NuGet packages distributables
+dist/

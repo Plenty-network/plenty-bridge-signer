@@ -1,0 +1,5 @@
+FSharp.Core
+FsUnit.Xunit
+Microsoft.NET.Test.Sdk
+altcover
+xunit.runner.visualstudio

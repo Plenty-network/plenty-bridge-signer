@@ -10,7 +10,7 @@ let client = IpfsClient("http://localhost:5001")
 
 type Dag() =
 
-    [<Fact>]
+    [<Fact(Skip="Needs an actual ipfs node")>]
     let ``Should save dag`` () =
         let link (v: string) =
             let link = JObject()
@@ -37,7 +37,7 @@ type Dag() =
 
 
 type Key() =
-    [<Fact>]
+    [<Fact(Skip="Needs an actual ipfs node")>]
     let ``Should list keys`` () =
         async {
             let! r = client.Key.List()
@@ -50,7 +50,7 @@ type Key() =
         }
 
 type Name() =
-    [<Fact>]
+    [<Fact(Skip="Needs an actual ipfs node")>]
     let ``Should resolve`` () =
         async {
             let! r = client.Name.Resolve("k51qzi5uqu5dilfdi6xt8tfbw4zmghwewcvvktm7z9fk4ktsx4z7wn0mz2glje")
