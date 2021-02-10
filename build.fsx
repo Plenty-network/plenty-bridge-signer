@@ -71,7 +71,10 @@ let testsGlob =
     !! (signerDir @@ "tests/**/*.??proj")
     ++ (indexerDir @@ "tests/**/*.??proj")
 
-let mainApp = signerSrc @@ productName
+let signerApp = signerSrc @@ "Signer.Service"
+let indexerApp = indexerSrc @@ "Indexer.Service"
+
+let apps = [(signerApp, "WrapSigner"); (indexerApp, "WrapIndexer")]
 
 let srcAndTest = [srcGlob;testsGlob] |> Seq.concat
     
@@ -439,7 +442,7 @@ let watchApp _ =
         ]
         |> String.concat " "
     dotnet.watch
-        (fun opt -> opt |> DotNet.Options.withWorkingDirectory (mainApp))
+        (fun opt -> opt |> DotNet.Options.withWorkingDirectory (signerApp))
         "run"
         appArgs
     |> ignore
@@ -475,7 +478,7 @@ let generateAssemblyInfo _ =
         | _ -> "release"
     let getAssemblyInfoAttributes projectName =
         [ AssemblyInfo.Title (projectName)
-          AssemblyInfo.Product productName
+          AssemblyInfo.Product (projectName.[..((projectName.IndexOf ".") - 1)])
           AssemblyInfo.Version latestEntry.AssemblyVersion
           AssemblyInfo.Metadata("ReleaseDate", latestEntry.Date.Value.ToString("o"))
           AssemblyInfo.FileVersion latestEntry.AssemblyVersion
@@ -524,7 +527,7 @@ let createPackage (app, productName) =
     )
 
 let createPackages _ =
-    [(signerSrc @@ "Signer.Service", "WrapSigner"); (indexerSrc @@ "Indexer.Service", "WrapIndexer")]
+    apps
     |> Seq.iter createPackage
 
 let gitRelease _ =

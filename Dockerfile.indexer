@@ -1,0 +1,34 @@
+# https://hub.docker.com/_/microsoft-dotnet
+FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+WORKDIR /source
+COPY signer.sln ./
+COPY .config/dotnet-tools.json ./.config/
+
+COPY signer/src/Signer.Core/*.fsproj ./signer/src/Signer.Core/
+COPY signer/src/Signer.Core/paket.references ./signer/src/Signer.Core/
+COPY signer/src/Signer.Service/*.fsproj ./signer/src/Signer.Service/
+COPY signer/src/Signer.Service/paket.references ./signer/src/Signer.Service/
+COPY signer/tests/Signer.Test/*.fsproj ./signer/tests/Signer.Test/
+COPY signer/tests/Signer.Test/paket.references ./signer/tests/Signer.Test/
+
+COPY indexer/src/Indexer.Core/*.fsproj ./indexer/src/Indexer.Core/
+COPY indexer/src/Indexer.Core/paket.references ./indexer/src/Indexer.Core/
+COPY indexer/src/Indexer.Service/*.fsproj ./indexer/src/Indexer.Service/
+COPY indexer/src/Indexer.Service/paket.references ./indexer/src/Indexer.Service/
+COPY indexer/tests/Indexer.Test/*.fsproj ./indexer/tests/Indexer.Test/
+COPY indexer/tests/Indexer.Test/paket.references ./indexer/tests/Indexer.Test/
+
+COPY paket.dependencies ./
+COPY paket.lock .
+
+RUN dotnet tool restore
+RUN dotnet paket restore -g main
+
+COPY . .
+WORKDIR /source/indexer/src/Indexer.Service
+RUN dotnet publish -c release -o /app
+
+FROM mcr.microsoft.com/dotnet/aspnet:5.0
+WORKDIR /App
+COPY --from=build /app .
+ENTRYPOINT ["dotnet", "Indexer.Service.dll"]

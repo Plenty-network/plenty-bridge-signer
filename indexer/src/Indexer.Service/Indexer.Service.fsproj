@@ -1,8 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>  
+  </PropertyGroup>
+  <PropertyGroup>
+    <Title>WrapIndexer</Title>
+    <Description>Indexer for Wrap protocol</Description>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs"/>
     <Compile Include="Infrastructure\State\StatePG.fs" />
     <Compile Include="Endpoints.fs" />
     <Compile Include="WatcherService.fs" />

@@ -1,0 +1,12 @@
+*/*/*/data/**/*
+*/*/*/bin/**/*
+*/*/*/obj/**/*
+paket-files
+.fake
+.git
+.github
+.idea
+.ionide
+docs
+**/temp
+packages

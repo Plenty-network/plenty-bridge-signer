@@ -2,9 +2,20 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
     <UserSecretsId>dotnet-Signer.Service-AA0B3D7F-120F-48AA-8B70-2BC389215B0F</UserSecretsId>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
+  <PropertyGroup>
+    <Title>WrapSigner</Title>
+    <Description>Signer node for wrap protocol</Description>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+</PropertyGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs"/>
     <Compile Include="Configuration.fs" />
     <Compile Include="MinterService.fs" />
     <Compile Include="UnwrapService.fs" />

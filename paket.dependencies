@@ -21,6 +21,7 @@ nuget Dapper 2.0.78
 nuget Npgsql 5.0.3
 nuget Evolve
 nuget altcover ~> 7
+nuget Packaging.Targets 0.1.189
 
 // [ FAKE GROUP ]
 group Build
