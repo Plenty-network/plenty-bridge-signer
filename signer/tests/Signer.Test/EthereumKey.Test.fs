@@ -28,7 +28,7 @@ let ``Should import from der x509`` () =
 
     }
     
-[<Fact>]
+[<Fact(Skip="Needs aws credentials")>]
 let ``Should extract ethereum address from aws``() = async {
     let client = new AmazonKeyManagementServiceClient(RegionEndpoint.EUCentral1)
     let signer = Crypto.awsSigner client "aaab9b9c-606f-4c5a-a284-ca7cceff5133"
