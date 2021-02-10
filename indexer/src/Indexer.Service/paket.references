@@ -8,3 +8,4 @@ AWSSDK.Extensions.NETCore.Setup
 Dapper
 Npgsql
 Evolve
+Giraffe
