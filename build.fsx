@@ -88,8 +88,8 @@ let distGlob =
 let coverageThresholdPercent = 0
 let coverageReportDir =  __SOURCE_DIRECTORY__  @@ "docs" @@ "coverage"
 
-let gitOwner = "MyGithubUsername"
-let gitRepoName = "MyCoolNewApp"
+let gitOwner = "bender-labs"
+let gitRepoName = "wrap-signer"
 
 let gitHubRepoUrl = sprintf "https://github.com/%s/%s" gitOwner gitRepoName
 
