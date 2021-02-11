@@ -38,6 +38,7 @@ type QuorumDto =
 [<CLIMutable>]
 type ErcMintDto<'T> =
     { level: string
+      transactionHash: string
       parameters: 'T
       signature: string
       quorum: QuorumDto }
@@ -67,12 +68,14 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
     let serialize =
         function
         | Erc20MintingSigned { Level = level
+                               TransactionHash = tx
                                Call = { Quorum = quorum
                                         Signature = signature
                                         Parameters = p } } ->
             let payload =
                 { level = level.ToString()
                   signature = signature
+                  transactionHash = tx
                   parameters =
                       { amount = p.Amount.ToString()
                         owner = p.Owner.Value
@@ -90,12 +93,14 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
             result.["payload"] <- payload
             result
         | Erc721MintingSigned { Level = level
+                                TransactionHash = tx
                                 Call = { Quorum = quorum
                                          Signature = signature
                                          Parameters = p } } ->
             let payload =
                 { level = level.ToString()
                   signature = signature
+                  transactionHash = tx
                   parameters =
                       { tokenId = p.TokenId.ToString()
                         owner = p.Owner.Value
@@ -159,7 +164,9 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
     let append event (head: Cid option) =
         asyncResult {
             let payload = serialize event
-            if head.IsSome then payload.["parent"] <- link head.Value
+
+            if head.IsSome then
+                payload.["parent"] <- link head.Value
 
             let! cid = client.Dag.PutDag(payload)
             state.PutHead cid
@@ -179,31 +186,32 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
         }
 
     let mailbox =
-        MailboxProcessor.Start(fun inbox ->
-            let rec messageLoop (head: Cid option) =
-                async {
-                    let! message = inbox.Receive()
+        MailboxProcessor.Start
+            (fun inbox ->
+                let rec messageLoop (head: Cid option) =
+                    async {
+                        let! message = inbox.Receive()
 
-                    match message with
-                    | Append (e, rc) ->
-                        let! cid = append e head
+                        match message with
+                        | Append (e, rc) ->
+                            let! cid = append e head
 
-                        match cid with
-                        | Ok v ->
-                            rc.Reply(Ok(EventId(Cid.value v), e))
-                            do! messageLoop (Some v)
-                        | Error err -> rc.Reply(Error err)
-                    | GetHead rc ->
-                        rc.Reply head
-                        do! messageLoop head
-                    | GetKey rc ->
-                        rc.Reply key
-                        do! messageLoop head
+                            match cid with
+                            | Ok v ->
+                                rc.Reply(Ok(EventId(Cid.value v), e))
+                                do! messageLoop (Some v)
+                            | Error err -> rc.Reply(Error err)
+                        | GetHead rc ->
+                            rc.Reply head
+                            do! messageLoop head
+                        | GetKey rc ->
+                            rc.Reply key
+                            do! messageLoop head
 
-                }
+                    }
 
-            (messageLoop (state.GetHead()))
-            |> Async.map (fun _ -> ()))
+                (messageLoop (state.GetHead()))
+                |> Async.map (fun _ -> ()))
 
     static member Create(client: IpfsClient, keyName: string, state: EventStoreState) =
         asyncResult {
@@ -219,9 +227,9 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
             let! head = mailbox.PostAndAsyncReply(GetHead)
             return! publish head
         }
-        
+
     member this.GetKey() =
         async {
-            let! key= mailbox.PostAndAsyncReply(GetKey)
+            let! key = mailbox.PostAndAsyncReply(GetKey)
             return key
         }

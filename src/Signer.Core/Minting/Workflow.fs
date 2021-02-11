@@ -35,6 +35,7 @@ let erc20Workflow (signer: Signer) (quorum: Quorum) (log: FilterLog) (dto: ERC20
         return
             Erc20MintingSigned
                 { Level = log.BlockNumber.Value
+                  TransactionHash = log.TransactionHash
                   Call =
                       { Quorum = quorum
                         Signature = signature.ToBase58()
@@ -54,6 +55,7 @@ let erc721Workflow (signer: Signer) (quorum: Quorum) (log: FilterLog) (dto: ERC7
         return
             Erc721MintingSigned
                 { Level = log.BlockNumber.Value
+                  TransactionHash = log.TransactionHash
                   Call =
                       { Quorum = quorum
                         Signature = signature.ToBase58()

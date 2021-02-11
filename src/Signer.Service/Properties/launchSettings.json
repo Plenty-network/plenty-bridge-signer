@@ -5,6 +5,7 @@
       "dotnetRunMessages": "true",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
+        "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_URLS": "http://localhost:5000"
       }
     },
@@ -14,6 +15,7 @@
       "workingDirectory": "./",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
+        "ASPNETCORE_ENVIRONMENT": "Development",
         "CONFIG_FILE": "appsettings.testnet.json",
         "ASPNETCORE_URLS": "http://localhost:5000"
       }

@@ -16,6 +16,7 @@ open Giraffe
 open Giraffe.EndpointRouting
 
 module Program =
+    open Microsoft.AspNetCore
 
     let configureApp (config: IConfigurationBuilder) =
         let configFile =
@@ -33,25 +34,22 @@ module Program =
                 |> ignore
 
     let configureServices (hostContext: WebHostBuilderContext) (services: IServiceCollection) =
-                    services
-                        .AddCommonServices(hostContext.Configuration)
-                        .AddPublisher()
-                        .AddMinter(hostContext.Configuration)
-                        .AddUnwrap(hostContext.Configuration)
-                        .AddSigner(hostContext.Configuration)
-                        .AddRouting()
-                        .AddGiraffe()
-                    |> ignore
-    
+        services
+            .AddCommonServices(hostContext.Configuration)
+            .AddPublisher()
+            .AddMinter(hostContext.Configuration)
+            .AddUnwrap(hostContext.Configuration)
+            .AddSigner(hostContext.Configuration)
+            .AddRouting()
+            .AddGiraffe()
+        |> ignore
+
     let createHostBuilder args =
-        Host
+        WebHost
             .CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(fun webHostBuilder ->
-                webHostBuilder
-                    .ConfigureAppConfiguration(configureApp)
-                    .ConfigureServices(configureServices)
-                    .Configure(fun app -> app.UseRouting().UseGiraffe(endpoints) |> ignore)
-                |> ignore)
+            .ConfigureAppConfiguration(configureApp)
+            .ConfigureServices(configureServices)
+            .Configure(fun app -> app.UseRouting().UseGiraffe(endpoints) |> ignore)
 
     [<EntryPoint>]
     let main args =

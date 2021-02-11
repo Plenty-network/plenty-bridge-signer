@@ -52,6 +52,7 @@ type QuorumContractCall<'T> =
 
 type ErcMint<'T> =
     { Level: bigint
+      TransactionHash: string
       Call: QuorumContractCall<'T> }
 
 type LockingContractCall<'T> =
