@@ -1,6 +1,6 @@
-*/*/*/data/**/*
-*/*/*/bin/**/*
-*/*/*/obj/**/*
+*/*/data/**/*
+*/*/bin/**/*
+*/*/obj/**/*
 paket-files
 .fake
 .git

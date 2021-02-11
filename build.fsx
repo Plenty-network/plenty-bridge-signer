@@ -44,39 +44,26 @@ let environVarAsBoolOrDefault varName defaultValue =
 let productName = "WrapSigner"
 let sln = "signer.sln"
 
-
-let signerDir = __SOURCE_DIRECTORY__ @@ "signer"
-let indexerDir = __SOURCE_DIRECTORY__ @@ "indexer"
-
-let signerSrc = signerDir  @@ "src"
-let indexerSrc = indexerDir @@ "src"
+let src = __SOURCE_DIRECTORY__  @@ "src"
 
 let srcCodeGlob =
-    !! ( signerSrc  @@ "**/*.fs")
-    ++ ( signerSrc  @@ "**/*.fsx")
-    ++ ( indexerSrc @@ "**/*.fs")
-    ++ ( indexerSrc @@ "**/*.fsx")
+    !! ( src  @@ "**/*.fs")
+    ++ ( src  @@ "**/*.fsx")
 
 let testsCodeGlob =
-    !! (signerDir  @@ "tests/**/*.fs")
-    ++ (signerDir  @@ "tests/**/*.fsx")
-    ++ (indexerDir  @@ "tests/**/*.fs")
-    ++ (indexerDir  @@ "tests/**/*.fsx")
+    !! (__SOURCE_DIRECTORY__  @@ "tests/**/*.fs")
+    ++ (__SOURCE_DIRECTORY__  @@ "tests/**/*.fsx")
 
-let srcGlob = 
-    !! (signerSrc @@ "**/*.??proj")
-    ++ (indexerSrc @@ "**/*.??proj")
+let srcGlob = src @@ "**/*.??proj"
+let testsGlob = __SOURCE_DIRECTORY__  @@ "tests/**/*.??proj"
 
-let testsGlob = 
-    !! (signerDir @@ "tests/**/*.??proj")
-    ++ (indexerDir @@ "tests/**/*.??proj")
+let signerApp = src @@ "Signer.Service"
 
-let signerApp = signerSrc @@ "Signer.Service"
-let indexerApp = indexerSrc @@ "Indexer.Service"
+let apps = [(signerApp, "WrapSigner")]
 
-let apps = [(signerApp, "WrapSigner"); (indexerApp, "WrapIndexer")]
-
-let srcAndTest = [srcGlob;testsGlob] |> Seq.concat
+let srcAndTest =
+    !! srcGlob
+    ++ testsGlob
     
 
 let distDir = __SOURCE_DIRECTORY__  @@ "dist"
@@ -256,8 +243,8 @@ let clean _ =
     ["bin"; "temp" ; distDir; coverageReportDir]
     |> Shell.cleanDirs
 
-    srcGlob 
-    |> Seq.append testsGlob
+    !! srcGlob 
+    ++ testsGlob
     |> Seq.collect(fun p ->
         ["bin";"obj"]
         |> Seq.map(fun sp ->
@@ -374,7 +361,7 @@ let dotnetBuild ctx =
 
 let fsharpAnalyzers _ =
     let argParser = ArgumentParser.Create<FSharpAnalyzers.Arguments>(programName = "fsharp-analyzers")
-    srcGlob
+    !! srcGlob
     |> Seq.iter(fun proj ->
         let args  =
             [
@@ -391,7 +378,7 @@ let fsharpAnalyzers _ =
 
 let dotnetTest ctx =
     let excludeCoverage =
-        testsGlob
+        !! testsGlob
         |> Seq.map IO.Path.GetFileNameWithoutExtension
         |> String.concat "|"
     DotNet.test(fun c ->
@@ -412,11 +399,10 @@ let dotnetTest ctx =
 
 let generateCoverageReport _ =
     let coverageReports =
-        !!"signer/tests/**/coverage*.xml"
-        ++ "indexer/tests/**/coverage*.xml"
+        !!"tests/**/coverage*.xml"
         |> String.concat ";"
     let sourceDirs =
-        srcGlob
+        !! srcGlob
         |> Seq.map Path.getDirectory
         |> String.concat ";"
     let independentArgs =
@@ -448,7 +434,7 @@ let watchApp _ =
     |> ignore
 
 let watchTests _ =
-    testsGlob
+    !! testsGlob
     |> Seq.map(fun proj -> fun () ->
         dotnet.watch
             (fun opt ->
