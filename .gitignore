@@ -461,8 +461,8 @@ Scripts/
 .ionide
 
 ### Project related 
-/signer/src/Signer.Service/data/
-/indexer/src/Indexer.Service/data/
+/src/Signer.Service/data/
+
 
 # NuGet packages distributables
 dist/
