@@ -79,7 +79,7 @@ type MinterService(logger: ILogger<MinterService>,
     member this.Work(store: EventStoreIpfs) =
         let target =
             { QuorumContract = TezosAddress.FromString tezosConfiguration.QuorumContract
-              MinterContract = TezosAddress.FromString(tezosConfiguration.MinterContract + "%signer")
+              MinterContract = TezosAddress.FromString(tezosConfiguration.MinterContract )
               ChainId = tezosConfiguration.Node.ChainId }
 
         logger.LogInformation("Resume ethereum watch at level {}", startingBlock)
