@@ -1,5 +1,6 @@
 source https://api.nuget.org/v3/index.json
 
+nuget Netezos 2.2.1
 nuget Nichelson
 nuget TzWatch.Lib
 nuget FSharp.Core
@@ -9,8 +10,6 @@ nuget System.Net.NameResolution
 nuget FsUnit.xUnit
 nuget Microsoft.NET.Test.Sdk
 nuget xunit.runner.visualstudio
-nuget Netezos.Keys
-nuget Netezos.Ledger
 nuget HidSharp
 nuget Nethereum.Web3 3.8.0
 nuget AWSSDK.KeyManagementService 3.5.1.6

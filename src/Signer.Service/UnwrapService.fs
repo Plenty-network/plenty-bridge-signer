@@ -9,6 +9,7 @@ open Microsoft.Extensions.Logging
 open Netezos.Rpc
 open Nethereum.Signer
 open Nethereum.Web3
+open Newtonsoft.Json.Linq
 open Signer
 open Signer.Configuration
 open Signer.EventStore
@@ -60,6 +61,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
                 tezosRpc.Blocks.Head.Header.GetAsync()
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
+                |> AsyncResult.map(fun v -> JToken.Parse(v.ToString()))
                 |> AsyncResult.catch (fun err -> sprintf "Couldn't connect to tezos node %s" err.Message)
 
             lastBlock <- defaultArg (state.GetTezosLevel()) (bigint tezosConfiguration.InitialLevel)
