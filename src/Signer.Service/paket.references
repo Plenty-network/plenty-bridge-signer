@@ -7,3 +7,4 @@ FSharpx.Extras
 AWSSDK.Extensions.NETCore.Setup
 Giraffe
 Packaging.Targets
+Azure.Identity

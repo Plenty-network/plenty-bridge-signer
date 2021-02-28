@@ -2,6 +2,7 @@ module Signer.Worker.Unwrap
 
 open System
 open Amazon.KeyManagementService
+open Azure.Identity
 open FSharp.Control
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
@@ -61,7 +62,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
                 tezosRpc.Blocks.Head.Header.GetAsync()
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
-                |> AsyncResult.map(fun v -> JToken.Parse(v.ToString()))
+                |> AsyncResult.map (fun v -> JToken.Parse(v.ToString()))
                 |> AsyncResult.catch (fun err -> sprintf "Couldn't connect to tezos node %s" err.Message)
 
             lastBlock <- defaultArg (state.GetTezosLevel()) (bigint tezosConfiguration.InitialLevel)
@@ -80,8 +81,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
     member this.Work(store: EventStoreIpfs) =
         logger.LogInformation("Resume tezos watch at level {}", lastBlock)
 
-        let pack =
-            Ethereum.Multisig.transactionHash web3
+        let pack = Ethereum.Multisig.transactionHash web3
 
         let workflow =
             Unwrap.workflow signer pack ethConfiguration.LockingContract store.Append
@@ -118,16 +118,28 @@ let configureSigner (services: IServiceCollection) (configuration: IConfiguratio
             .GetSection("Ethereum:Signer:Type")
             .Get<SignerType>()
 
-    let createAwsSigner(s: IServiceProvider) =
-        let kms = s.GetService<IAmazonKeyManagementService>()
+    let createAwsSigner (s: IServiceProvider) =
+        let kms =
+            s.GetService<IAmazonKeyManagementService>()
+
         let keyId = configuration.["Ethereum:Signer:KeyId"]
         Crypto.awsSigner kms keyId :> obj
 
     let service =
         match signerType with
-        | SignerType.AWS -> 
-            services.AddAWSService<IAmazonKeyManagementService>() |> ignore
+        | SignerType.AWS ->
+            services.AddAWSService<IAmazonKeyManagementService>()
+            |> ignore
+
             ServiceDescriptor(typeof<EthereumSigner>, createAwsSigner, ServiceLifetime.Singleton)
+        | SignerType.Azure ->
+            let keyId = configuration.["Ethereum:Signer:KeyId"]
+            let vault = configuration.["Azure:KeyVault"]
+
+            let signer =
+                Crypto.azureSigner (DefaultAzureCredential()) (Uri(vault)) keyId :> obj
+
+            ServiceDescriptor(typeof<EthereumSigner>, signer)
         | SignerType.Memory ->
             let key =
                 EthECKey(configuration.["Ethereum:Signer:Key"])

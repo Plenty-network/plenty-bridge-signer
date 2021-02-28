@@ -2,6 +2,7 @@ module Signer.Worker.Minting
 
 open System
 open Amazon.KeyManagementService
+open Azure.Identity
 open FSharp.Control
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
@@ -79,7 +80,7 @@ type MinterService(logger: ILogger<MinterService>,
     member this.Work(store: EventStoreIpfs) =
         let target =
             { QuorumContract = TezosAddress.FromString tezosConfiguration.QuorumContract
-              MinterContract = TezosAddress.FromString(tezosConfiguration.MinterContract )
+              MinterContract = TezosAddress.FromString(tezosConfiguration.MinterContract)
               ChainId = tezosConfiguration.Node.ChainId }
 
         logger.LogInformation("Resume ethereum watch at level {}", startingBlock)
@@ -126,13 +127,20 @@ let configureSigner (services: IServiceCollection) (configuration: IConfiguratio
             |> ignore
 
             ServiceDescriptor(typeof<TezosSigner>, createAwsSigner, ServiceLifetime.Singleton)
+        | SignerType.Azure ->
+            let keyId = configuration.["Tezos:Signer:KeyId"]
+            let vault = configuration.["Azure:KeyVault"]
+
+            let signer =
+                Crypto.azureSigner (DefaultAzureCredential()) (Uri(vault)) keyId :> obj
+
+            ServiceDescriptor(typeof<TezosSigner>, signer)
         | SignerType.Memory ->
             let key = configuration.["Tezos:Signer:Key"]
             ServiceDescriptor(typeof<TezosSigner>, Crypto.memorySigner (Key.FromBase58 key))
         | v -> failwith (sprintf "Unknown signer type: %A" v)
 
     services.Add(service)
-
 
 type IServiceCollection with
     member this.AddMinter(configuration: IConfiguration) =

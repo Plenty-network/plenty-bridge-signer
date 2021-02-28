@@ -31,6 +31,7 @@ type TezosNodeConfiguration =
 type SignerType =
     | AWS = 0
     | Memory = 1
+    | Azure = 2
 
 [<CLIMutable>]
 type TezosConfiguration =

@@ -7,3 +7,4 @@ LiteDB
 AWSSDK.KeyManagementService
 TzWatch.Lib
 Netezos
+Azure.Security.KeyVault.Keys

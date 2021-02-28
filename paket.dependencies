@@ -1,5 +1,7 @@
 source https://api.nuget.org/v3/index.json
 
+nuget Azure.Identity
+nuget Azure.Security.KeyVault.Keys 4.1.0
 nuget Netezos 2.2.1
 nuget Nichelson
 nuget TzWatch.Lib
