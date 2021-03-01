@@ -38,7 +38,8 @@ type UnwrapService(logger: ILogger<UnwrapService>,
             sprintf "Hash:%s Counter:%i Nonce:%i" hash counter nonce
 
     let apply (workflow: UnwrapWorkflow) level (updates: Update seq) =
-        logger.LogInformation("Processing Block {level} containing {nb} event(s)", level, updates |> Seq.length)
+        if updates |> Seq.length > 0 then
+            logger.LogInformation("Processing Block {level} containing {nb} event(s)", level, updates |> Seq.length)
 
         let applyOne (event: Update) =
             logger.LogDebug("Processing {id}", idToString event.UpdateId)
@@ -95,12 +96,16 @@ type UnwrapService(logger: ILogger<UnwrapService>,
 
         let apply = apply workflow
 
-        Subscription.run poller (Height(int lastBlock + 1)) parameters
+        Subscription.run
+            poller
+            ({ Level = Height(int lastBlock + 1)
+               YieldEmpty = true })
+            parameters
         |> AsyncSeq.iterAsync (fun { BlockHeader = header
                                      Updates = updates } ->
             async {
-
-                logger.LogDebug("Event from tezos level:{e} Block:{val}", header.Level, header.Hash)
+                if updates |> Seq.length > 0
+                then logger.LogDebug("Event from tezos level:{e} Block:{val}", header.Level, header.Hash)
 
                 let! result = apply header.Level updates
 
