@@ -38,8 +38,8 @@ type UnwrapService(logger: ILogger<UnwrapService>,
             sprintf "Hash:%s Counter:%i Nonce:%i" hash counter nonce
 
     let apply (workflow: UnwrapWorkflow) level (updates: Update seq) =
-        if updates |> Seq.length > 0 then
-            logger.LogInformation("Processing Block {level} containing {nb} event(s)", level, updates |> Seq.length)
+        if updates |> Seq.length > 0
+        then logger.LogInformation("Processing Block {level} containing {nb} event(s)", level, updates |> Seq.length)
 
         let applyOne (event: Update) =
             logger.LogDebug("Processing {id}", idToString event.UpdateId)
@@ -117,48 +117,5 @@ type UnwrapService(logger: ILogger<UnwrapService>,
 
 
 
-let configureSigner (services: IServiceCollection) (configuration: IConfiguration) =
-    let signerType =
-        configuration
-            .GetSection("Ethereum:Signer:Type")
-            .Get<SignerType>()
-
-    let createAwsSigner (s: IServiceProvider) =
-        let kms =
-            s.GetService<IAmazonKeyManagementService>()
-
-        let keyId = configuration.["Ethereum:Signer:KeyId"]
-        Crypto.awsSigner kms keyId :> obj
-
-    let service =
-        match signerType with
-        | SignerType.AWS ->
-            services.AddAWSService<IAmazonKeyManagementService>()
-            |> ignore
-
-            ServiceDescriptor(typeof<EthereumSigner>, createAwsSigner, ServiceLifetime.Singleton)
-        | SignerType.Azure ->
-            let keyId = configuration.["Ethereum:Signer:KeyId"]
-            let vault = configuration.["Azure:KeyVault"]
-
-            let signer =
-                Crypto.azureSigner (DefaultAzureCredential()) (Uri(vault)) keyId :> obj
-
-            ServiceDescriptor(typeof<EthereumSigner>, signer)
-        | SignerType.Memory ->
-            let key =
-                EthECKey(configuration.["Ethereum:Signer:Key"])
-
-            let signer = Signer.Ethereum.Crypto.memorySigner key
-
-            ServiceDescriptor(typeof<EthereumSigner>, signer)
-        | v -> failwith (sprintf "Unknown signer type: %A" v)
-
-    services.Add(service)
-
-
 type IServiceCollection with
-    member this.AddUnwrap(configuration: IConfiguration) =
-
-        configureSigner this configuration
-        this.AddSingleton<UnwrapService>()
+    member this.AddUnwrap() = this.AddSingleton<UnwrapService>()

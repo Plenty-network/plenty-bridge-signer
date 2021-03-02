@@ -106,44 +106,6 @@ type MinterService(logger: ILogger<MinterService>,
 
             })
 
-
-let configureSigner (services: IServiceCollection) (configuration: IConfiguration) =
-    let signerType =
-        configuration
-            .GetSection("Tezos:Signer:Type")
-            .Get<SignerType>()
-
-    let createAwsSigner (s: IServiceProvider) =
-        let kms =
-            s.GetService<IAmazonKeyManagementService>()
-
-        let keyId = configuration.["Tezos:Signer:KeyId"]
-        Crypto.awsSigner kms keyId :> obj
-
-    let service =
-        match signerType with
-        | SignerType.AWS ->
-            services.AddAWSService<IAmazonKeyManagementService>()
-            |> ignore
-
-            ServiceDescriptor(typeof<TezosSigner>, createAwsSigner, ServiceLifetime.Singleton)
-        | SignerType.Azure ->
-            let keyId = configuration.["Tezos:Signer:KeyId"]
-            let vault = configuration.["Azure:KeyVault"]
-
-            let signer =
-                Crypto.azureSigner (DefaultAzureCredential()) (Uri(vault)) keyId :> obj
-
-            ServiceDescriptor(typeof<TezosSigner>, signer)
-        | SignerType.Memory ->
-            let key = configuration.["Tezos:Signer:Key"]
-            ServiceDescriptor(typeof<TezosSigner>, Crypto.memorySigner (Key.FromBase58 key))
-        | v -> failwith (sprintf "Unknown signer type: %A" v)
-
-    services.Add(service)
-
 type IServiceCollection with
-    member this.AddMinter(configuration: IConfiguration) =
-
-        configureSigner this configuration
+    member this.AddMinter () =
         this.AddSingleton<MinterService>()

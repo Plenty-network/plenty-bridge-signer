@@ -37,9 +37,10 @@ module Program =
         services
             .AddCommonServices(hostContext.Configuration)
             .AddPublisher()
-            .AddMinter(hostContext.Configuration)
-            .AddUnwrap(hostContext.Configuration)
+            .AddMinter()
+            .AddUnwrap()
             .AddSigner(hostContext.Configuration)
+            .AddPaymentAddressWorkflow()
             .AddRouting()
             .AddGiraffe()
         |> ignore
