@@ -6,6 +6,7 @@ open FsUnit.Xunit
 open Xunit
 open Signer.Tezos
 
+
 let multisig = "KT1MsooZb43dWi5GpHLeoYw5gyXj9viUuMcE"
 let fa2Contract = "KT1LL3X5FcnUji8MVVWdi8bsjDATWqVvDgCB"
 
@@ -31,7 +32,7 @@ let key =
     Key.FromBase58("edsk3na5J3BQh5DY8QGt4v8f3JLpGVfax6YaiRqcfLWmYKaRhs65LU")
 
 [<Fact>]
-let ``should pack mint fungible`` () =
+let ``Should pack mint fungible`` () =
 
     let v =
         Multisig.packMintErc20 target mintErc20
@@ -88,3 +89,12 @@ let ``Should sign`` () =
             equal
                "edsigu16VhLaBaPmEJTfze3Jqkpxd23kRP5TZUMZEMkHqd1dTSJVfPvUK3yx6F55XXnTvsZtUKUMM738gzgLPXs8jzEXWiY7SgA"
     }
+
+[<Fact>]
+let ``Should pack sign payment address`` () =
+    let packed = Multisig.packChangePaymentAddress target {Address = TezosAddress.FromString "tz1exrEuATYhFmVSXhkCkkFzY72T75hpsthj" ; Counter = 1UL}
+    
+    let expected = "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c94000707000107070a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e65720a000000160000d3f99177aa262227a65b344416f85de34bf21420"
+    match packed with
+    | Ok packed ->  packed |> Encoder.byteToHex |> should equal expected
+    | Error err -> failwith err

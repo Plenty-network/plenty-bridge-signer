@@ -4,7 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.fs"/>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Result.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Json.fs" />
@@ -20,6 +20,7 @@
     <Compile Include="Ethereum\Crypto.fs" />
     <Compile Include="Minting\Workflow.fs" />
     <Compile Include="Unwrap\Workflow.fs" />
+    <Compile Include="PaymentAddress\Worflow.fs" />
     <Compile Include="Infrastructure\IPFS\Types.fs" />
     <Compile Include="Infrastructure\IPFS\IpfsClient.fs" />
     <Compile Include="Infrastructure\EventStore\EventStoreIpfs.fs" />

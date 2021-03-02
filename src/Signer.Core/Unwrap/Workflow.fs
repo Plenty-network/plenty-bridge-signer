@@ -1,5 +1,6 @@
 module Signer.Unwrap
 
+open Signer
 open FsToolkit.ErrorHandling.Operator.AsyncResult
 open Signer.Ethereum.Multisig
 open Signer.Tezos

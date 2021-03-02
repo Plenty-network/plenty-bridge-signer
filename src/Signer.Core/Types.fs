@@ -76,6 +76,12 @@ type Erc721UnwrapParameters =
       ERC721: string
       OperationId: string }
 
+type ChangePaymentAddressParameters = 
+  {
+    Address: TezosAddress.T
+    Counter: uint64
+  }
+
 type DomainEvent =
     | Erc20MintingSigned of ErcMint<Erc20MintingParameters>
     | Erc721MintingSigned of ErcMint<Erc721MintingParameters>

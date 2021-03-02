@@ -10,7 +10,7 @@ open Signer
 [<RequireQualifiedAccess>]
 module Multisig =
 
-    let private targetContractParameter = "(or %entry_point
+    let private minterEntrypoints = "(or %entrypoint
                  (or (pair %add_fungible_token (bytes %eth_contract) (pair %token_address address nat))
                      (pair %add_nft (bytes %eth_contract) (address %token_contract)))
                  (or (pair %mint_fungible_token
@@ -22,20 +22,24 @@ module Multisig =
                         (pair (pair %event_id (bytes %block_hash) (nat %log_index))
                               (pair (address %owner) (nat %token_id))))))"
 
-    let private signedParameters =
-        sprintf "(pair (pair chain_id address) (pair %s address))" targetContractParameter
+    let private minterPayload =
+        sprintf "(pair (pair chain_id address) (pair %s address))" minterEntrypoints
 
-    let private paramsType = ContractParameters signedParameters
+    let private minterPayloadType = ContractParameters minterPayload
 
-    let packMintErc20 ({ QuorumContract = multisig
-                         MinterContract = benderContract
-                         ChainId = chainId })
-                      ({ Amount = amount
-                         Owner = owner
-                         Erc20 = erc20
-                         EventId = { BlockHash = txId
-                                     LogIndex = logIndex } })
-                      =
+    let private paymentAddressPayloadType =
+        ContractParameters "(pair (pair chain_id address) (pair nat (pair address address)))"
+
+    let packMintErc20
+        ({ QuorumContract = multisig
+           MinterContract = benderContract
+           ChainId = chainId })
+        ({ Amount = amount
+           Owner = owner
+           Erc20 = erc20
+           EventId = { BlockHash = txId
+                       LogIndex = logIndex } })
+        =
         try
             let mint =
                 Record [ ("%amount", IntArg(amount))
@@ -46,24 +50,26 @@ module Multisig =
                                    ("%log_index", IntArg logIndex) ]) ]
 
             let value =
-                paramsType.Instantiate
-                    (Tuple [ StringArg chainId
-                             AddressArg multisig
-                             Record [ ("%mint_fungible_token", mint) ]
-                             AddressArg benderContract ])
+                minterPayloadType.Instantiate(
+                    Tuple [ StringArg chainId
+                            AddressArg multisig
+                            Record [ ("%mint_fungible_token", mint) ]
+                            AddressArg benderContract ]
+                )
 
-            Result.Ok(Encoder.pack value)
-        with err -> Result.Error err.Message
+            Ok(Encoder.pack value)
+        with err -> Error err.Message
 
-    let packMintErc721 ({ QuorumContract = multisig
-                          MinterContract = benderContract
-                          ChainId = chainId })
-                       ({ TokenId = tokenId
-                          Owner = owner
-                          Erc721 = erc721
-                          EventId = { BlockHash = txId
-                                      LogIndex = logIndex } })
-                       =
+    let packMintErc721
+        ({ QuorumContract = multisig
+           MinterContract = benderContract
+           ChainId = chainId })
+        ({ TokenId = tokenId
+           Owner = owner
+           Erc721 = erc721
+           EventId = { BlockHash = txId
+                       LogIndex = logIndex } })
+        =
         try
             let mint =
                 Record [ ("%token_id", IntArg(tokenId))
@@ -74,11 +80,24 @@ module Multisig =
                                    ("%log_index", IntArg logIndex) ]) ]
 
             let value =
-                paramsType.Instantiate
-                    (Tuple [ StringArg chainId
-                             AddressArg multisig
-                             Record [ ("%mint_nft", mint) ]
-                             AddressArg benderContract ])
+                minterPayloadType.Instantiate(
+                    Tuple [ StringArg chainId
+                            AddressArg multisig
+                            Record [ ("%mint_nft", mint) ]
+                            AddressArg benderContract ]
+                )
 
-            Result.Ok(Encoder.pack value)
-        with err -> Result.Error err.Message
+            Ok(Encoder.pack value)
+        with err -> Error err.Message
+
+    let packChangePaymentAddress
+        { QuorumContract = multisig
+          MinterContract = benderContract
+          ChainId = chainId }
+        ({ Address = address; Counter = counter })
+        =
+        try 
+            let payload = Tuple [StringArg chainId ; AddressArg multisig ; IntArg (bigint counter) ; AddressArg benderContract ; AddressArg address]
+            let value = paymentAddressPayloadType.Instantiate payload
+            Ok (Encoder.pack value)
+        with err -> Error err.Message
