@@ -1,0 +1,39 @@
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+name: Upload Release Asset
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.100
+      - name: Restore
+        run: dotnet tool restore && dotnet restore
+      - name: Pack
+        run: |
+          arrTag=(${GITHUB_REF//\// })
+          VERSION="${arrTag[2]}"
+          VERSION="${VERSION//v}"
+          dotnet msbuild "/t:Restore;CreateTarball" /p:RuntimeIdentifier=osx-x64 /p:CustomTarget=CreateTarball /p:Configuration=Release /p:PackageVersion=${VERSION} /p:PackageDir=${PWD}/dist src/Signer.Service/Signer.Service.fsproj
+          dotnet msbuild "/t:Restore;CreateTarball" /p:RuntimeIdentifier=linux-x64 /p:CustomTarget=CreateTarball /p:Configuration=Release /p:PackageVersion=${VERSION} /p:PackageDir=${PWD}/dist src/Signer.Service/Signer.Service.fsproj
+          dotnet msbuild "/t:Restore;CreateTarball" /p:RuntimeIdentifier=win-x64 /p:CustomTarget=CreateZip /p:Configuration=Release /p:PackageVersion=${VERSION} /p:PackageDir=${PWD}/dist src/Signer.Service/Signer.Service.fsproj
+      - name: Create Release
+        run: |
+          set -x
+          assets=()
+          for asset in ./dist/*; do
+            assets+=("-a" "$asset")
+          done
+          tag_name="${GITHUB_REF##*/}"
+          hub release create "${assets[@]}" -m "$tag_name" "$tag_name"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    

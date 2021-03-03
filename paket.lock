@@ -54,8 +54,8 @@ NUGET
       FSharp.Core (>= 5.0.1) - restriction: >= netstandard2.0
       System.Reactive (>= 5.0) - restriction: >= netstandard2.0
     FSharp.Core (5.0.1)
-    FSharp.Data (3.3.3) - restriction: >= net50
-      FSharp.Core (>= 4.3.4) - restriction: && (< net45) (>= netstandard2.0)
+    FSharp.Data (4.0.1) - restriction: >= net50
+      FSharp.Core (>= 4.7.2) - restriction: >= netstandard2.0
     FSharpx.Async (1.14.1) - restriction: >= net50
       FSharp.Control.AsyncSeq (>= 2.0.21) - restriction: || (>= net452) (>= netstandard2.0)
       FSharp.Core (>= 4.6.2) - restriction: || (>= net452) (>= netstandard2.0)
