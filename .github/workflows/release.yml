@@ -24,7 +24,7 @@ jobs:
           VERSION="${VERSION//v}"
           dotnet msbuild "/t:Restore;CreateTarball" /p:RuntimeIdentifier=osx-x64 /p:CustomTarget=CreateTarball /p:Configuration=Release /p:PackageVersion=${VERSION} /p:PackageDir=${PWD}/dist src/Signer.Service/Signer.Service.fsproj
           dotnet msbuild "/t:Restore;CreateTarball" /p:RuntimeIdentifier=linux-x64 /p:CustomTarget=CreateTarball /p:Configuration=Release /p:PackageVersion=${VERSION} /p:PackageDir=${PWD}/dist src/Signer.Service/Signer.Service.fsproj
-          dotnet msbuild "/t:Restore;CreateTarball" /p:RuntimeIdentifier=win-x64 /p:CustomTarget=CreateZip /p:Configuration=Release /p:PackageVersion=${VERSION} /p:PackageDir=${PWD}/dist src/Signer.Service/Signer.Service.fsproj
+          dotnet msbuild "/t:Restore;CreateZip" /p:RuntimeIdentifier=win-x64 /p:CustomTarget=CreateZip /p:Configuration=Release /p:PackageVersion=${VERSION} /p:PackageDir=${PWD}/dist src/Signer.Service/Signer.Service.fsproj
       - name: Create Release
         run: |
           set -x
