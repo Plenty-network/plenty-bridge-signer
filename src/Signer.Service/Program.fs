@@ -4,6 +4,7 @@ open Microsoft.Extensions.FileProviders
 open Microsoft.Extensions.Hosting
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
+open Microsoft.Extensions.Logging
 open Signer.Configuration
 open Signer.Worker.Minting
 open Signer.Worker.Publish
@@ -50,6 +51,7 @@ module Program =
             .CreateDefaultBuilder(args)
             .ConfigureAppConfiguration(configureApp)
             .ConfigureServices(configureServices)
+            .SuppressStatusMessages(true)
             .Configure(fun app -> app.UseRouting().UseGiraffe(endpoints) |> ignore)
 
     [<EntryPoint>]
