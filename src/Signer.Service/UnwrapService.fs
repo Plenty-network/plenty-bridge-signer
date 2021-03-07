@@ -80,7 +80,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
         |> AsyncResult.catch (fun err -> sprintf "Unexpected check error %s" err.Message)
 
     member this.Work(store: EventStoreIpfs) =
-        logger.LogInformation("Resume tezos watch at level {}", lastBlock)
+        logger.LogInformation("Resume tezos watch at level {level}", lastBlock)
 
         let pack = Ethereum.Multisig.transactionHash web3
 
@@ -105,7 +105,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
                                      Updates = updates } ->
             async {
                 if updates |> Seq.length > 0
-                then logger.LogDebug("Event from tezos level:{e} Block:{val}", header.Level, header.Hash)
+                then logger.LogDebug("Event from tezos level:{level} Block:{hash}", header.Level, header.Hash)
 
                 let! result = apply header.Level updates
 

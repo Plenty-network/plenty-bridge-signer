@@ -44,13 +44,13 @@ type SignerWorker(logger: ILogger<SignerWorker>,
 
     let logHead =
         function
-        | Some (Cid value) -> logger.LogInformation("At Head {v}", value)
+        | Some (Cid value) -> logger.LogInformation("At Head {head}", value)
         | None -> logger.LogInformation("Starting from scratch")
 
     let catch =
         function
         | Choice2Of2 v ->
-            logger.LogError("Error in worker {v}", v.ToString())
+            logger.LogError("Error in worker {err}", v.ToString())
             Environment.ExitCode <- 1
             lifeTime.StopApplication()
             Async.retn ()

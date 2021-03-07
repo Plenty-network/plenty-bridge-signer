@@ -30,11 +30,11 @@ type MinterService(logger: ILogger<MinterService>,
 
     let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: _ seq) =
         logger.LogInformation
-            ("Processing Block {level} containing {nb} event(s)", blockLevel.Value, events |> Seq.length)
+            ("Processing Block {level} containing {count} event(s)", blockLevel.Value, events |> Seq.length)
 
         let applyOne (event: EthEventLog) =
             logger.LogDebug
-                ("Processing {i}:{h} index:{ind}",
+                ("Processing {transactionIndex}:{transactionHash} index:{logIndex}",
                  event.Log.TransactionIndex,
                  event.Log.TransactionHash,
                  event.Log.LogIndex)
@@ -83,7 +83,7 @@ type MinterService(logger: ILogger<MinterService>,
               MinterContract = TezosAddress.FromString(tezosConfiguration.MinterContract)
               ChainId = tezosConfiguration.Node.ChainId }
 
-        logger.LogInformation("Resume ethereum watch at level {}", startingBlock)
+        logger.LogInformation("Resume ethereum watch at level {level}", startingBlock)
 
         let workflow =
             Minting.workflow signer.Sign store.Append target
