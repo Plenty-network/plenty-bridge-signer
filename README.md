@@ -9,7 +9,7 @@ Signer node and indexer for wrap protocol
 
 GitHub Actions |
 :---: |
-[![GitHub Actions](https://github.com/bender-labs/wrap-signer/workflows/Build%20master/badge.svg)](https://github.com/bender-labs/wrap-signer/actions?query=branch%3Amaster) |
+[![.NET Core](https://github.com/bender-labs/wrap-signer/actions/workflows/build.yml/badge.svg)](https://github.com/bender-labs/wrap-signer/actions/workflows/build.yml)|
 [![Build History](https://buildstats.info/github/chart/bender-labs/wrap-signer)](https://github.com/bender-labs/wrap-signer/actions?query=branch%3Amaster) |
 
 
