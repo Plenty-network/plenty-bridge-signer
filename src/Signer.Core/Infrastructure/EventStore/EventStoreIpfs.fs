@@ -40,6 +40,7 @@ type ErcMintDto<'T> =
     { level: string
       transactionHash: string
       parameters: 'T
+      signerAddress: string
       signature: string
       quorum: QuorumDto }
 
@@ -47,6 +48,7 @@ type ErcMintDto<'T> =
 type ErcUnwrapDto<'T> =
     { level: string
       parameters: 'T
+      signerAddress: string
       signature: string
       lockingContract: string }
 
@@ -71,10 +73,12 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
                                TransactionHash = tx
                                Call = { Quorum = quorum
                                         Signature = signature
+                                        SignerAddress = address
                                         Parameters = p } } ->
             let payload =
                 { level = level.ToString()
                   signature = signature
+                  signerAddress = address
                   transactionHash = tx
                   parameters =
                       { amount = p.Amount.ToString()
@@ -96,10 +100,12 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
                                 TransactionHash = tx
                                 Call = { Quorum = quorum
                                          Signature = signature
+                                         SignerAddress = address
                                          Parameters = p } } ->
             let payload =
                 { level = level.ToString()
                   signature = signature
+                  signerAddress = address
                   transactionHash = tx
                   parameters =
                       { tokenId = p.TokenId.ToString()
@@ -119,11 +125,13 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
             result
         | Erc20UnwrapSigned { Level = level
                               Call = { Signature = signature
+                                       SignerAddress = address
                                        LockingContract = lockingContract
                                        Parameters = p } } ->
             let payload =
                 { level = level.ToString()
                   signature = signature
+                  signerAddress = address 
                   lockingContract = lockingContract
                   parameters =
                       { erc20 = p.ERC20
@@ -138,11 +146,13 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
             result
         | Erc721UnwrapSigned { Level = level
                                Call = { Signature = signature
+                                        SignerAddress = address
                                         LockingContract = lockingContract
                                         Parameters = p } } ->
             let payload =
                 { level = level.ToString()
                   signature = signature
+                  signerAddress = address
                   lockingContract = lockingContract
                   parameters =
                       { erc721 = p.ERC721

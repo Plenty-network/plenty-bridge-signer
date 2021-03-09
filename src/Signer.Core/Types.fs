@@ -48,6 +48,7 @@ type Quorum =
 type QuorumContractCall<'T> =
     { Quorum: Quorum
       Signature: string
+      SignerAddress : string
       Parameters: 'T }
 
 type ErcMint<'T> =
@@ -57,6 +58,7 @@ type ErcMint<'T> =
 
 type LockingContractCall<'T> =
     { LockingContract: string
+      SignerAddress: string
       Signature: string
       Parameters: 'T }
 

@@ -21,10 +21,10 @@ let private updateIdToString =
     | Operation { OpgHash = hash; Counter = counter } -> sprintf "%s/%i" hash counter
 
 let private route (erc20Workflow: Erc20Workflow)
-                      (erc721Workflow: Erc721Workflow)
-                      level
-                      ({ Value = value; UpdateId = id })
-                      =
+                  (erc721Workflow: Erc721Workflow)
+                  level
+                  ({ Value = value; UpdateId = id })
+                  =
 
     match value with
     | Erc20Unwrapped dto ->
@@ -50,6 +50,7 @@ let erc20Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: str
         let call = erc20TransferCall p
         let! r = pack lockingContract p.ERC20 p.OperationId call
         let! signature = signer.Sign(r)
+        let! address = signer.PublicAddress()
 
         return
             Erc20UnwrapSigned
@@ -57,6 +58,7 @@ let erc20Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: str
                   Call =
                       { LockingContract = lockingContract
                         Signature = signature
+                        SignerAddress = address
                         Parameters = p } }
     }
 
@@ -65,6 +67,7 @@ let erc721Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: st
         let call = erc721SafeTransferCall lockingContract p
         let! hash = pack lockingContract p.ERC721 p.OperationId call
         let! signature = signer.Sign(hash)
+        let! address = signer.PublicAddress()
 
         return
             Erc721UnwrapSigned
@@ -72,6 +75,7 @@ let erc721Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: st
                   Call =
                       { LockingContract = lockingContract
                         Signature = signature
+                        SignerAddress = signature
                         Parameters = p } }
     }
 

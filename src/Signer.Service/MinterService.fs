@@ -1,13 +1,9 @@
 module Signer.Worker.Minting
 
 open System
-open Amazon.KeyManagementService
-open Azure.Identity
 open FSharp.Control
-open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
-open Netezos.Keys
 open Nethereum.Hex.HexTypes
 open Nethereum.Web3
 open Nichelson
@@ -17,7 +13,6 @@ open Signer.Ethereum
 open Signer.EventStore
 open Signer.Minting
 open Signer.State.LiteDB
-open Signer.Tezos
 
 type MinterService(logger: ILogger<MinterService>,
                    web3: Web3,
@@ -86,7 +81,7 @@ type MinterService(logger: ILogger<MinterService>,
         logger.LogInformation("Resume ethereum watch at level {level}", startingBlock)
 
         let workflow =
-            Minting.workflow signer.Sign store.Append target
+            Minting.workflow signer store.Append target
 
         let apply = apply workflow
 
