@@ -22,9 +22,9 @@ module ERC20UnwrappedEventDto =
     let entryPointName = "unwrap_erc20"
 
     let private unwrapType =
-        ContractParameters "(pair
-              (pair (nat %amount) (bytes %destination))
-              (pair (bytes %erc_20) (nat %fees)))"
+        ContractParameters "(pair %unwrap_erc20 (bytes %erc_20)
+                                    (pair (nat %amount)
+                                          (pair (nat %fees) (bytes %destination))))"
 
     let fromJson (call: JToken) =
         let expr =
@@ -44,7 +44,8 @@ module ERC20UnwrappedEventDto =
 module ERC721UnwrappedEventDto =
 
     let private unwrapType =
-        ContractParameters "(pair (pair (bytes %destination) (bytes %erc_721)) (nat %token_id))"
+        ContractParameters "(pair %unwrap_erc721 (bytes %erc_721)
+                                     (pair (nat %token_id) (bytes %destination)))"
 
     let entryPointName = "unwrap_erc721"
 
