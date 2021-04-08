@@ -3,13 +3,9 @@ source https://www.nuget.org/api/v2
 
 nuget Azure.Identity
 nuget Azure.Security.KeyVault.Keys 4.1.0
-nuget Netezos 2.2.1
 nuget Nichelson
 nuget TzWatch.Lib
-nuget FSharp.Core
-nuget Microsoft.Extensions.Hosting
 nuget Microsoft.Extensions.Hosting.WindowsServices
-nuget System.Net.NameResolution
 nuget FsUnit.xUnit
 nuget Microsoft.NET.Test.Sdk
 nuget xunit.runner.visualstudio

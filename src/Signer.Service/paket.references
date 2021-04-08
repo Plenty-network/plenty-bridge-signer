@@ -1,9 +1,5 @@
-Microsoft.Extensions.Hosting
 Microsoft.Extensions.Hosting.WindowsServices
-System.Net.NameResolution
 TzWatch.Lib
-FSharp.Core
-FSharpx.Extras
 AWSSDK.Extensions.NETCore.Setup
 Giraffe
 Packaging.Targets
