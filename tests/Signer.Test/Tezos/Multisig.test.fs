@@ -15,14 +15,14 @@ let benderContract =
 
 
 let target: Quorum =
-    { QuorumContract = TezosAddress.FromString multisig
-      MinterContract = TezosAddress.FromString(benderContract)
+    { QuorumContract = TezosAddress.FromStringUnsafe multisig
+      MinterContract = TezosAddress.FromStringUnsafe benderContract
       ChainId = "NetXm8tYqnMWky1" }
 
 let mintErc20 =
     { Erc20 = "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea"
       Amount = 100I
-      Owner = TezosAddress.FromString "tz1S792fHX5rvs6GYP49S1U58isZkp2bNmn6"
+      Owner = TezosAddress.FromStringUnsafe "tz1S792fHX5rvs6GYP49S1U58isZkp2bNmn6"
       EventId =
           { BlockHash = "0xc2796cf51a390d3049f55cc97b6584e14e8a4a9c89b934afee27b3ce9c396f7b"
             LogIndex = 5I } }
@@ -50,7 +50,7 @@ let ``Should pack mint fungible`` () =
 let ``Should pack mint nft`` () =
     let mint =
         { TokenId = 1337I
-          Owner = TezosAddress.FromString "tz1S792fHX5rvs6GYP49S1U58isZkp2bNmn6"
+          Owner = TezosAddress.FromStringUnsafe "tz1S792fHX5rvs6GYP49S1U58isZkp2bNmn6"
           Erc721 = "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea"
           EventId =
               { BlockHash = "0xc2796cf51a390d3049f55cc97b6584e14e8a4a9c89b934afee27b3ce9c396f7b"
@@ -92,7 +92,7 @@ let ``Should sign`` () =
 
 [<Fact>]
 let ``Should pack sign payment address`` () =
-    let packed = Multisig.packChangePaymentAddress target {Address = TezosAddress.FromString "tz1exrEuATYhFmVSXhkCkkFzY72T75hpsthj" ; Counter = 1UL}
+    let packed = Multisig.packChangePaymentAddress target {Address = TezosAddress.FromStringUnsafe "tz1exrEuATYhFmVSXhkCkkFzY72T75hpsthj" ; Counter = 1UL}
     
     let expected = "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c94000707000107070a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e65720a000000160000d3f99177aa262227a65b344416f85de34bf21420"
     match packed with

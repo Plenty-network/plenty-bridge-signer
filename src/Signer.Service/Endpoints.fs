@@ -74,7 +74,7 @@ let paymentAddressHandler: HttpHandler =
             let! payload = ctx.BindJsonAsync<PaymentAddressPayload>()
 
             let parameters: ChangePaymentAddressParameters =
-                { Address = TezosAddress.FromString payload.Address
+                { Address = TezosAddress.FromStringUnsafe payload.Address
                   Counter = payload.Counter }
 
             printfn "%A" payload

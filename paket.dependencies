@@ -3,7 +3,7 @@ source https://www.nuget.org/api/v2
 
 nuget Azure.Identity
 nuget Azure.Security.KeyVault.Keys 4.1.0
-nuget Nichelson
+nuget Nichelson 0.2.0
 nuget TzWatch.Lib
 nuget Microsoft.Extensions.Hosting.WindowsServices
 nuget FsUnit.xUnit
@@ -17,5 +17,4 @@ nuget LiteDB
 nuget Giraffe 5.0.0-rc-6 rc
 nuget altcover ~> 7
 nuget Packaging.Targets 0.1.189
-
-    
+nuget Newtonsoft.Json == 13.0.1

@@ -1,30 +1,35 @@
 module Signer.Minting
 
 open Nethereum.RPC.Eth.DTOs
+open Nichelson
 open Signer.Ethereum
 open Signer.Ethereum.Contract
 open Signer.Tezos
 
 let erc20Params (dto: ERC20WrapAskedEventDto) (log: FilterLog) =
-    { Erc20 = dto.Token
-      Amount = dto.Amount
-      Owner = dto.TezosAddress
-      EventId =
-          { BlockHash = log.BlockHash
-            LogIndex = log.LogIndex.Value } }
+    TezosAddress.FromString dto.TezosAddress
+    |> Result.map (fun v ->
+        { Erc20 = dto.Token
+          Amount = dto.Amount
+          Owner = v
+          EventId =
+              { BlockHash = log.BlockHash
+                LogIndex = log.LogIndex.Value } })
 
 let erc721Params (dto: ERC721WrapAskedEventDto) (log: FilterLog) =
-    { TokenId = dto.TokenId
-      Owner = dto.TezosAddress
-      Erc721 = dto.Token
-      EventId =
-          { BlockHash = log.BlockHash
-            LogIndex = log.LogIndex.Value } }
+    TezosAddress.FromString dto.TezosAddress
+    |> Result.map (fun v ->
+        { TokenId = dto.TokenId
+          Owner = v
+          Erc721 = dto.Token
+          EventId =
+              { BlockHash = log.BlockHash
+                LogIndex = log.LogIndex.Value } })
 
 
 let erc20Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto: ERC20WrapAskedEventDto) =
     asyncResult {
-        let parameters = erc20Params dto log
+        let! parameters = erc20Params dto log |> AsyncResult.ofResult
 
         let! packed =
             Multisig.packMintErc20 quorum parameters
@@ -49,7 +54,7 @@ let erc20Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto: 
 
 let erc721Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto: ERC721WrapAskedEventDto) =
     asyncResult {
-        let parameters = erc721Params dto log
+        let! parameters = erc721Params dto log |> AsyncResult.ofResult
 
         let! packed =
             Multisig.packMintErc721 quorum parameters

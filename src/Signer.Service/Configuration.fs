@@ -182,8 +182,8 @@ type IServiceCollection with
                 s.GetService<TezosSigner>()
             let configuration = s.GetService<TezosConfiguration>()
             let target =
-                    { QuorumContract = TezosAddress.FromString configuration.QuorumContract
-                      MinterContract = TezosAddress.FromString(configuration.MinterContract)
+                    { QuorumContract = TezosAddress.FromStringUnsafe configuration.QuorumContract
+                      MinterContract = TezosAddress.FromStringUnsafe configuration.MinterContract
                       ChainId = configuration.Node.ChainId }
             PaymentAddress.workflow signer target :> obj
         this.Add(ServiceDescriptor(typeof<ChangePaymentAddressWorkflow>, createPaymentAddressWorkflow, ServiceLifetime.Singleton))

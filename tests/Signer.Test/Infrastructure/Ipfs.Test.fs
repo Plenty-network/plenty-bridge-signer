@@ -10,17 +10,18 @@ let client = IpfsClient("http://localhost:5001")
 
 type Dag() =
 
-    [<Fact(Skip="Needs an actual ipfs node")>]
+    [<Fact(Skip = "Needs an actual ipfs node")>]
     let ``Should save dag`` () =
         let link (v: string) =
             let link = JObject()
             link.Add("/", JValue(v))
             link
-            
+
         async {
             let p =
                 JObject.FromObject
-                    (ERC20WrapAskedEventDto(owner = "other value", token = "nsta", amount = 10I, tezosAddress = (TezosAddress.FromString "tz1naitn")))
+                    (ERC20WrapAskedEventDto
+                        (owner = "other value", token = "nsta", amount = 10I, tezosAddress = "tz1naitn"))
 
             let payload = JObject()
             payload.["parent"] <- link "bafyreicxg4gn5j2krxzsj6ddonsyh4rbzxa57flplvhn25yo6fbt3agshy"
@@ -37,7 +38,7 @@ type Dag() =
 
 
 type Key() =
-    [<Fact(Skip="Needs an actual ipfs node")>]
+    [<Fact(Skip = "Needs an actual ipfs node")>]
     let ``Should list keys`` () =
         async {
             let! r = client.Key.List()
@@ -50,10 +51,11 @@ type Key() =
         }
 
 type Name() =
-    [<Fact(Skip="Needs an actual ipfs node")>]
+    [<Fact(Skip = "Needs an actual ipfs node")>]
     let ``Should resolve`` () =
         async {
             let! r = client.Name.Resolve("k51qzi5uqu5dilfdi6xt8tfbw4zmghwewcvvktm7z9fk4ktsx4z7wn0mz2glje")
+
             match r with
             | Ok v ->
                 v
