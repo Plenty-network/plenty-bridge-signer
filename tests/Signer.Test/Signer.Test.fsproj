@@ -13,10 +13,17 @@
     <Compile Include="Ethereum\EthereumKey.Test.fs" />
     <Compile Include="Infrastructure\Ipfs.Test.fs" />
     <Compile Include="Infrastructure\State.Test.fs" />
+    <Compile Include="Unwrap\Workflow.test.fs" />
     <Content Include="sample\pub.der">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="sample\signature.der">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sample\unwrap_erc721_call.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sample\unwrap_erc20_call.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

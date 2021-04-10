@@ -48,7 +48,14 @@ let private route (erc20Workflow: Erc20Workflow)
 let erc20Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) level (p: Erc20UnwrapParameters) =
     asyncResult {
         let call = erc20TransferCall p
-        let! r = pack lockingContract p.ERC20 p.OperationId call
+
+        let! r =
+            pack
+                { LockingContract = lockingContract
+                  ErcContract = p.ERC20
+                  OperationId = p.OperationId
+                  Data = call }
+
         let! signature = signer.Sign(r)
         let! address = signer.PublicAddress()
 
@@ -65,7 +72,14 @@ let erc20Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: str
 let erc721Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) level (p: Erc721UnwrapParameters) =
     asyncResult {
         let call = erc721SafeTransferCall lockingContract p
-        let! hash = pack lockingContract p.ERC721 p.OperationId call
+
+        let! hash =
+            pack
+                { LockingContract = lockingContract
+                  ErcContract = p.ERC721
+                  OperationId = p.OperationId
+                  Data = call }
+
         let! signature = signer.Sign(hash)
         let! address = signer.PublicAddress()
 
@@ -75,7 +89,7 @@ let erc721Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: st
                   Call =
                       { LockingContract = lockingContract
                         Signature = signature
-                        SignerAddress = signature
+                        SignerAddress = address
                         Parameters = p } }
     }
 

@@ -50,17 +50,17 @@ let ``Should create erc721 transfer call`` () =
         equal
            "42842e0e0000000000000000000000009b51c20109ea7adf2807849c616f202d58991c300000000000000000000000008178c9c1be2a48dcf9ea8ad7a99577da7a283de50000000000000000000000000000000000000000000000000000000000000539"
 
-[<Fact(Skip="Needs an actual ethereum node")>]
+[<Fact(Skip = "Needs an actual ethereum node")>]
 let ``Should create erc20 transaction hash`` () =
     async {
 
         let! hash =
             transactionHash
                 web3
-                lockingContract
-                erc20Params.ERC20
-                erc20Params.OperationId
-                (erc20TransferCall erc20Params)
+                { LockingContract = lockingContract
+                  ErcContract = erc20Params.ERC20
+                  OperationId = erc20Params.OperationId
+                  Data = (erc20TransferCall erc20Params) }
 
         match hash with
         | Ok hash ->
@@ -70,17 +70,17 @@ let ``Should create erc20 transaction hash`` () =
         | Error err -> failwith err
     }
 
-[<Fact(Skip="Needs an actual ethereum node")>]
+[<Fact(Skip = "Needs an actual ethereum node")>]
 let ``Should create erc721 transaction hash`` () =
     async {
 
         let! hash =
             transactionHash
                 web3
-                lockingContract
-                erc721Params.ERC721
-                erc721Params.OperationId
-                (erc721SafeTransferCall lockingContract erc721Params)
+                { LockingContract = lockingContract
+                  ErcContract = erc721Params.ERC721
+                  OperationId = erc721Params.OperationId
+                  Data = (erc721SafeTransferCall lockingContract erc721Params) }
 
         match hash with
         | Ok hash ->
@@ -90,7 +90,7 @@ let ``Should create erc721 transaction hash`` () =
         | Error err -> failwith err
     }
 
-[<Fact(Skip="Needs an actual ethereum node")>]
+[<Fact(Skip = "Needs an actual ethereum node")>]
 let ``Should sign erc20 unwrap`` () =
     async {
         let sign =
@@ -99,10 +99,10 @@ let ``Should sign erc20 unwrap`` () =
         let! r =
             transactionHash
                 web3
-                lockingContract
-                erc20Params.Owner
-                erc20Params.OperationId
-                (erc20TransferCall erc20Params)
+                { LockingContract = lockingContract
+                  ErcContract = erc20Params.Owner
+                  OperationId = erc20Params.OperationId
+                  Data = erc20TransferCall erc20Params }
             |> sign
 
         match r with
@@ -115,7 +115,7 @@ let ``Should sign erc20 unwrap`` () =
     }
 
 
-[<Fact(Skip="Needs an actual ethereum node")>]
+[<Fact(Skip = "Needs an actual ethereum node")>]
 let ``Should sign erc721 unwrap`` () =
     async {
         let sign =
@@ -124,10 +124,10 @@ let ``Should sign erc721 unwrap`` () =
         let! r =
             transactionHash
                 web3
-                lockingContract
-                erc721Params.Owner
-                erc721Params.OperationId
-                (erc721SafeTransferCall lockingContract erc721Params)
+                { LockingContract = lockingContract
+                  ErcContract = erc721Params.Owner
+                  OperationId = erc721Params.OperationId
+                  Data = erc721SafeTransferCall lockingContract erc721Params }
             |> sign
 
         match r with

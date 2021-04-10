@@ -10,7 +10,13 @@ type UnwrapParameters =
       Amount: bigint
       OperationId: string }
 
-type EthPack = string -> string -> string -> byte array -> byte array DomainResult
+type PackParameters =
+    { LockingContract: string
+      ErcContract: string
+      OperationId: string
+      Data: byte [] }
+
+type EthPack = PackParameters -> byte array DomainResult
 
 
 let private disconnectedWeb3 = Web3()
@@ -26,7 +32,7 @@ let erc20TransferCall (p: Erc20UnwrapParameters) =
 
     Hex.Decode(data.[2..])
 
-let erc721SafeTransferCall (lockingContract:string) (p: Erc721UnwrapParameters) =
+let erc721SafeTransferCall (lockingContract: string) (p: Erc721UnwrapParameters) =
 
     let erc721 =
         disconnectedWeb3.Eth.GetContract(Contract.erc721Abi, p.ERC721)
@@ -40,10 +46,14 @@ let erc721SafeTransferCall (lockingContract:string) (p: Erc721UnwrapParameters) 
 
     Hex.Decode(data.[2..])
 
-let transactionHash (web3: Web3) : EthPack =
-    fun (lockingContractAddress:string) (destination: string) (operationId: string) (data: byte []) ->
+let transactionHash (web3: Web3): EthPack =
+    fun { LockingContract = lockingContractAddress
+          ErcContract = destination
+          Data = data
+          OperationId = operationId } ->
         let locking =
             web3.Eth.GetContract(Contract.lockingContractAbi, lockingContractAddress)
+
         asyncResult {
             let! hash =
                 locking
@@ -52,7 +62,7 @@ let transactionHash (web3: Web3) : EthPack =
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
                 |> AsyncResult.catch (fun err -> err.Message)
-                
+
 
             return hash
         }

@@ -2,7 +2,6 @@ module Signer.``Minting workflow test``
 
 open Common.Logging
 open FsUnit.Xunit
-open Microsoft.Identity.Client
 open Netezos.Encoding
 open Netezos.Keys
 open Nethereum.Hex.HexTypes
