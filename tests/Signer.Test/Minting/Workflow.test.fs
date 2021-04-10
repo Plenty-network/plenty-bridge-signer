@@ -107,3 +107,53 @@ let ``Should build wrap erc721`` () =
             |> should equal (Erc721MintingSigned expectedMint)
         | Error e -> failwith e
     }
+
+[<Fact>]
+let ``Should build erc20 mint error on bad tezos address`` () =
+    async {
+        let p =
+            Erc20Wrapped(ERC20WrapAskedEventDto("owner", token, 100I, "bad_address"))
+
+        let! result = workflow { Log = filterLog; Event = p }
+
+        match result with
+        | Ok (_, event) ->
+            let expectedMint =
+                { Level = filterLog.BlockNumber.Value
+                  TransactionHash = filterLog.TransactionHash
+                  Reason = "Bad tezos address bad_address"
+                  SignerAddress = signerPubKey.PubKey.GetBase58()
+                  Payload =
+                      { ERC20 = token
+                        Owner = "owner"
+                        Amount = 100I } }
+
+            event
+            |> should equal (Erc20MintingFailed expectedMint)
+        | Error e -> failwith e
+    }
+
+[<Fact>]
+let ``Should build erc721 mint error on bad tezos address`` () =
+    async {
+        let p =
+            Erc721Wrapped(ERC721WrapAskedEventDto("owner", token, 1337I, "bad_address"))
+
+        let! result = workflow { Log = filterLog; Event = p }
+
+        match result with
+        | Ok (_, event) ->
+            let expectedMint =
+                { Level = filterLog.BlockNumber.Value
+                  TransactionHash = filterLog.TransactionHash
+                  Reason = "Bad tezos address bad_address"
+                  SignerAddress = signerPubKey.PubKey.GetBase58()
+                  Payload =
+                      { ERC721 = token
+                        Owner = "owner"
+                        TokenId = 1337I } }
+
+            event
+            |> should equal (Erc721MintingFailed expectedMint)
+        | Error e -> failwith e
+    }

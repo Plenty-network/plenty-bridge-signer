@@ -84,10 +84,32 @@ type ChangePaymentAddressParameters =
     Counter: uint64
   }
 
+type Erc20MintingError = {
+    ERC20: string
+    Owner: string
+    Amount: bigint
+}
+
+type Erc721MintingError = {
+    ERC721: string
+    Owner: string
+    TokenId: bigint
+}
+
+type ErcMintError<'t> = {
+    Level: bigint
+    TransactionHash: string
+    SignerAddress : string
+    Reason: string
+    Payload: 't
+}
+
 type DomainEvent =
     | Erc20MintingSigned of ErcMint<Erc20MintingParameters>
     | Erc721MintingSigned of ErcMint<Erc721MintingParameters>
     | Erc20UnwrapSigned of ErcUnwrap<Erc20UnwrapParameters>
     | Erc721UnwrapSigned of ErcUnwrap<Erc721UnwrapParameters>
+    | Erc20MintingFailed of ErcMintError<Erc20MintingError>
+    | Erc721MintingFailed of ErcMintError<Erc721MintingError>
 
 type Append<'e> = 'e -> DomainResult<EventId * 'e>

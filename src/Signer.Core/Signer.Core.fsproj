@@ -22,6 +22,7 @@
     <Compile Include="PaymentAddress\Worflow.fs" />
     <Compile Include="Infrastructure\IPFS\Types.fs" />
     <Compile Include="Infrastructure\IPFS\IpfsClient.fs" />
+    <Compile Include="Infrastructure\EventStore\Types.fs" />
     <Compile Include="Infrastructure\EventStore\EventStoreIpfs.fs" />
     <Compile Include="Infrastructure\State\StateLiteDB.fs" />
   </ItemGroup>

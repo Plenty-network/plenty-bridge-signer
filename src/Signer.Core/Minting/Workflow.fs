@@ -27,55 +27,104 @@ let erc721Params (dto: ERC721WrapAskedEventDto) (log: FilterLog) =
                 LogIndex = log.LogIndex.Value } })
 
 
+
+
 let erc20Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto: ERC20WrapAskedEventDto) =
-    asyncResult {
-        let! parameters = erc20Params dto log |> AsyncResult.ofResult
 
-        let! packed =
-            Multisig.packMintErc20 quorum parameters
-            |> AsyncResult.ofResult
+    let signErc20Minting (parameters: Erc20MintingParameters) =
+        asyncResult {
+            let! packed =
+                Multisig.packMintErc20 quorum parameters
+                |> AsyncResult.ofResult
 
-        let! signature = signer.Sign packed
+            let! signature = signer.Sign packed
 
-        let! address =
-            signer.PublicAddress()
-            |> AsyncResult.map (fun v -> v.GetBase58())
+            let! address =
+                signer.PublicAddress()
+                |> AsyncResult.map (fun v -> v.GetBase58())
 
-        return
-            Erc20MintingSigned
-                { Level = log.BlockNumber.Value
-                  TransactionHash = log.TransactionHash
-                  Call =
-                      { Quorum = quorum
-                        Signature = signature.ToBase58()
-                        SignerAddress = address
-                        Parameters = parameters } }
-    }
+            return
+                Erc20MintingSigned
+                    { Level = log.BlockNumber.Value
+                      TransactionHash = log.TransactionHash
+                      Call =
+                          { Quorum = quorum
+                            Signature = signature.ToBase58()
+                            SignerAddress = address
+                            Parameters = parameters } }
+        }
+
+    let buildErc20MintingError =
+        asyncResult {
+            let! address =
+                signer.PublicAddress()
+                |> AsyncResult.map (fun v -> v.GetBase58())
+
+            return
+                Erc20MintingFailed
+                    { Level = log.BlockNumber.Value
+                      TransactionHash = log.TransactionHash
+                      Reason = sprintf "Bad tezos address %s" dto.TezosAddress
+                      SignerAddress = address
+                      Payload =
+                          { ERC20 = dto.Token
+                            Owner = dto.Owner
+                            Amount = dto.Amount } }
+        }
+
+    match erc20Params dto log with
+    | Ok v -> signErc20Minting v
+    | Error _ -> buildErc20MintingError
+
 
 let erc721Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto: ERC721WrapAskedEventDto) =
-    asyncResult {
-        let! parameters = erc721Params dto log |> AsyncResult.ofResult
 
-        let! packed =
-            Multisig.packMintErc721 quorum parameters
-            |> AsyncResult.ofResult
+    let signErc721Minting (parameters: Erc721MintingParameters) =
+        asyncResult {
+            let! packed =
+                Multisig.packMintErc721 quorum parameters
+                |> AsyncResult.ofResult
 
-        let! address =
-            signer.PublicAddress()
-            |> AsyncResult.map (fun v -> v.GetBase58())
+            let! address =
+                signer.PublicAddress()
+                |> AsyncResult.map (fun v -> v.GetBase58())
 
-        let! signature = signer.Sign packed
+            let! signature = signer.Sign packed
 
-        return
-            Erc721MintingSigned
-                { Level = log.BlockNumber.Value
-                  TransactionHash = log.TransactionHash
-                  Call =
-                      { Quorum = quorum
-                        SignerAddress = address
-                        Signature = signature.ToBase58()
-                        Parameters = parameters } }
-    }
+            return
+                Erc721MintingSigned
+                    { Level = log.BlockNumber.Value
+                      TransactionHash = log.TransactionHash
+                      Call =
+                          { Quorum = quorum
+                            SignerAddress = address
+                            Signature = signature.ToBase58()
+                            Parameters = parameters } }
+        }
+
+
+    let buildErc721MintingError =
+        asyncResult {
+            let! address =
+                signer.PublicAddress()
+                |> AsyncResult.map (fun v -> v.GetBase58())
+
+            return
+                Erc721MintingFailed
+                    { Level = log.BlockNumber.Value
+                      TransactionHash = log.TransactionHash
+                      Reason = sprintf "Bad tezos address %s" dto.TezosAddress
+                      SignerAddress = address
+                      Payload =
+                          { ERC721 = dto.Token
+                            Owner = dto.Owner
+                            TokenId = dto.TokenId } }
+        }
+
+
+    match erc721Params dto log with
+    | Ok v -> signErc721Minting v
+    | Error _ -> buildErc721MintingError
 
 
 
