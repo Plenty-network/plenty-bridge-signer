@@ -6,24 +6,21 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Nethereum.Hex.HexTypes
 open Nethereum.Web3
-open Nichelson
 open Signer
 open Signer.Configuration
 open Signer.Ethereum
-open Signer.EventStore
-open Signer.Minting
 open Signer.State.LiteDB
 
 type MinterService(logger: ILogger<MinterService>,
                    web3: Web3,
                    ethConfiguration: EthereumConfiguration,
-                   tezosConfiguration: TezosConfiguration,
                    signer: TezosSigner,
-                   state: StateLiteDb) =
+                   state: StateLiteDb,
+                   commandBus: ICommandBus) =
 
     let mutable startingBlock: bigint = 0I
 
-    let apply (workflow: MinterWorkflow) (blockLevel: HexBigInteger, events: _ seq) =
+    let apply (blockLevel: HexBigInteger, events: _ seq) =
         logger.LogInformation
             ("Processing Block {level} containing {count} event(s)", blockLevel.Value, events |> Seq.length)
 
@@ -34,7 +31,8 @@ type MinterService(logger: ILogger<MinterService>,
                  event.Log.TransactionHash,
                  event.Log.LogIndex)
 
-            workflow event
+            commandBus.Post(Minting event)
+
 
         let rec f elements =
             asyncResult {
@@ -63,7 +61,7 @@ type MinterService(logger: ILogger<MinterService>,
 
             let! addr =
                 signer.PublicAddress()
-                |> AsyncResult.catch (fun err -> sprintf "Couldn't get public key %s" err.Message)
+                |> AsyncResult.catch (fun err -> sprintf "Couldn't get tezos public key %s" err.Message)
 
             logger.LogInformation("Using signing tezos address {hash} {key}", addr.Address, addr.GetBase58())
             return ()
@@ -72,18 +70,8 @@ type MinterService(logger: ILogger<MinterService>,
 
 
 
-    member this.Work(store: EventStoreIpfs) =
-        let target =
-            { QuorumContract = TezosAddress.FromStringUnsafe tezosConfiguration.QuorumContract
-              MinterContract = TezosAddress.FromStringUnsafe tezosConfiguration.MinterContract
-              ChainId = tezosConfiguration.Node.ChainId }
-
+    member this.Work() =
         logger.LogInformation("Resume ethereum watch at level {level}", startingBlock)
-
-        let workflow =
-            Minting.workflow signer store.Append target
-
-        let apply = apply workflow
 
         Watcher.watchFor
             web3
@@ -102,5 +90,4 @@ type MinterService(logger: ILogger<MinterService>,
             })
 
 type IServiceCollection with
-    member this.AddMinter () =
-        this.AddSingleton<MinterService>()
+    member this.AddMinter() = this.AddSingleton<MinterService>()

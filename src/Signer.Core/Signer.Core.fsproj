@@ -25,6 +25,7 @@
     <Compile Include="Infrastructure\EventStore\Types.fs" />
     <Compile Include="Infrastructure\EventStore\EventStoreIpfs.fs" />
     <Compile Include="Infrastructure\State\StateLiteDB.fs" />
+    <Compile Include="Command.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

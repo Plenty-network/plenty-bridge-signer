@@ -5,9 +5,9 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Signer.EventStore
 
-type PublishService(logger: ILogger<PublishService>) =
+type PublishService(logger: ILogger<PublishService>, store: EventStoreIpfs) =
 
-    member this.Work(store: EventStoreIpfs) =
+    member this.Work() =
         let rec work () =
             async {
                 logger.LogInformation("Publishing head")

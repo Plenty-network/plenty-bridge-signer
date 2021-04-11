@@ -128,16 +128,14 @@ let erc721Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto:
 
 
 
-type MinterWorkflow = EthEventLog -> DomainResult<(EventId * DomainEvent)>
+type MinterWorkflow = EthEventLog -> DomainResult<DomainEvent>
 
 
-let workflow (signer: TezosSigner) (append: _ Append) (target: Quorum): MinterWorkflow =
+let workflow (signer: TezosSigner) (target: Quorum): MinterWorkflow =
     let erc20Workflow = erc20Workflow signer target
     let erc721Workflow = erc721Workflow signer target
-    let append = AsyncResult.bind append
 
-    fun logEvent ->
-        match logEvent.Event with
-        | Erc20Wrapped dto -> erc20Workflow logEvent.Log dto
-        | Erc721Wrapped dto -> erc721Workflow logEvent.Log dto
-        |> append
+    fun { Event = event; Log = log } ->
+        match event with
+        | Erc20Wrapped dto -> erc20Workflow log dto
+        | Erc721Wrapped dto -> erc721Workflow log dto

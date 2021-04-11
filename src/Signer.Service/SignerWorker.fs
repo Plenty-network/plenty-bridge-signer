@@ -3,11 +3,9 @@ module Signer.Service
 open System
 open System.Threading
 open System.Threading.Tasks
-open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
-open Signer.Configuration
 open Signer.EventStore
 open Signer.IPFS
 open Signer.State.LiteDB
@@ -17,8 +15,7 @@ open Signer.Worker.Unwrap
 
 type SignerWorker(logger: ILogger<SignerWorker>,
                   state: StateLiteDb,
-                  ipfsClient: IpfsClient,
-                  ipfsConfiguration: IpfsConfiguration,
+                  eventStore: EventStoreIpfs,
                   minter: MinterService,
                   publish: PublishService,
                   unwrap: UnwrapService,
@@ -65,31 +62,21 @@ type SignerWorker(logger: ILogger<SignerWorker>,
                 let! _ = check minter.Check
                 let! _ = check unwrap.Check
 
-                let! store =
-                    let cidOption = (state :> EventStoreState).GetHead()
-                    logHead cidOption
+                let cidOption = (state :> EventStoreState).GetHead()
+                logHead cidOption
 
-                    let eventStoreIpfsResultAsync =
-                        EventStoreIpfs.Create(ipfsClient, ipfsConfiguration.KeyName, state)
-
-                    check (eventStoreIpfsResultAsync)
+                let! _ = check (eventStore.GetKey())
 
                 logger.LogInformation("All checks are green")
 
                 let minterWork =
-                    minter.Work store
-                    |> Async.Catch
-                    |> Async.bind catch
+                    minter.Work() |> Async.Catch |> Async.bind catch
 
                 let publishWork =
-                    publish.Work store
-                    |> Async.Catch
-                    |> Async.bind catch
+                    publish.Work() |> Async.Catch |> Async.bind catch
 
                 let unwrapWork =
-                    unwrap.Work store
-                    |> Async.Catch
-                    |> Async.bind catch
+                    unwrap.Work() |> Async.Catch |> Async.bind catch
 
                 minterTask <- Some(Async.StartAsTask(minterWork, cancellationToken = cancelToken.Token))
                 publishTask <- Some(Async.StartAsTask(publishWork, cancellationToken = cancelToken.Token))
@@ -114,6 +101,4 @@ type SignerWorker(logger: ILogger<SignerWorker>,
 
 
 type IServiceCollection with
-    member this.AddSigner(conf: IConfiguration) =
-        this
-            .AddHostedService<SignerWorker>()
+    member this.AddSigner() = this.AddHostedService<SignerWorker>()

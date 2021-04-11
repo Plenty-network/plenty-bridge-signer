@@ -1,33 +1,25 @@
 module Signer.Worker.Unwrap
 
 open System
-open Amazon.KeyManagementService
-open Azure.Identity
 open FSharp.Control
-open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Netezos.Rpc
-open Nethereum.Signer
-open Nethereum.Web3
 open Newtonsoft.Json.Linq
 open Signer
 open Signer.Configuration
-open Signer.EventStore
 open Signer.State.LiteDB
 open Signer.Tezos
-open Signer.Ethereum
 open Signer.Unwrap
 open TzWatch.Domain
 open TzWatch.Sync
 
 type UnwrapService(logger: ILogger<UnwrapService>,
-                   web3: Web3,
                    tezosRpc: TezosRpc,
-                   ethConfiguration: EthereumConfiguration,
                    tezosConfiguration: TezosConfiguration,
                    signer: EthereumSigner,
-                   state: StateLiteDb) =
+                   state: StateLiteDb,
+                   commandBus: ICommandBus) =
 
     let mutable lastBlock: bigint = 2I
 
@@ -37,13 +29,14 @@ type UnwrapService(logger: ILogger<UnwrapService>,
         | InternalOperation ({ OpgHash = hash; Counter = counter }, nonce) ->
             sprintf "Hash:%s Counter:%i Nonce:%i" hash counter nonce
 
-    let apply (workflow: UnwrapWorkflow) level (updates: Update seq) =
+    let apply level (updates: Update seq) =
         if updates |> Seq.length > 0
         then logger.LogInformation("Processing Block {level} containing {nb} event(s)", level, updates |> Seq.length)
 
         let applyOne (event: Update) =
             logger.LogDebug("Processing {id}", idToString event.UpdateId)
-            workflow level event
+
+            commandBus.Post(Unwrap(level, UnwrapFromTezosUpdate event))
 
         let rec f elements =
             asyncResult {
@@ -79,22 +72,15 @@ type UnwrapService(logger: ILogger<UnwrapService>,
         }
         |> AsyncResult.catch (fun err -> sprintf "Unexpected check error %s" err.Message)
 
-    member this.Work(store: EventStoreIpfs) =
+    member this.Work() =
         logger.LogInformation("Resume tezos watch at level {level}", lastBlock)
-
-        let pack = Ethereum.Multisig.transactionHash web3
-
-        let workflow =
-            Unwrap.workflow signer pack ethConfiguration.LockingContract store.Append
 
         let parameters =
             Events.subscription tezosConfiguration.MinterContract (uint tezosConfiguration.Node.Confirmations)
 
-
         let poller =
             SyncNode(tezosRpc, tezosConfiguration.Node.ChainId)
 
-        let apply = apply workflow
 
         Subscription.run
             poller

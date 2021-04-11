@@ -13,10 +13,13 @@ open Nethereum.Web3
 open Nichelson
 open Signer.Ethereum
 open Signer.EventStore
+open Signer.EventStore
 open Signer.IPFS
+open Signer.Minting
 open Signer.PaymentAddress
 open Signer.State.LiteDB
 open Signer
+open Signer.Unwrap
 
 [<CLIMutable>]
 type EthNodeConfiguration =
@@ -58,7 +61,6 @@ type IServiceCollection with
 
             let db =
                 new LiteDatabase(sprintf "Filename=%s;Connection=direct" liteDbPath)
-
             new StateLiteDb(db) :> obj
 
 
@@ -175,18 +177,66 @@ type IServiceCollection with
 
         this.Add(service)
         this
-        
+
     member this.AddPaymentAddressWorkflow() =
         let createPaymentAddressWorkflow (s: IServiceProvider) =
-            let signer =
-                s.GetService<TezosSigner>()
+            let signer = s.GetService<TezosSigner>()
             let configuration = s.GetService<TezosConfiguration>()
+
             let target =
-                    { QuorumContract = TezosAddress.FromStringUnsafe configuration.QuorumContract
-                      MinterContract = TezosAddress.FromStringUnsafe configuration.MinterContract
-                      ChainId = configuration.Node.ChainId }
+                { QuorumContract = TezosAddress.FromStringUnsafe configuration.QuorumContract
+                  MinterContract = TezosAddress.FromStringUnsafe configuration.MinterContract
+                  ChainId = configuration.Node.ChainId }
+
             PaymentAddress.workflow signer target :> obj
-        this.Add(ServiceDescriptor(typeof<ChangePaymentAddressWorkflow>, createPaymentAddressWorkflow, ServiceLifetime.Singleton))
+
+        this.Add
+            (ServiceDescriptor
+                (typeof<ChangePaymentAddressWorkflow>, createPaymentAddressWorkflow, ServiceLifetime.Singleton))
+
+        this
+
+    member this.AddMinterWorkflow() =
+        let createMinterWorkflow (s: IServiceProvider) =
+            let signer = s.GetService<TezosSigner>()
+
+            let configuration = s.GetService<TezosConfiguration>()
+
+            let target =
+                { QuorumContract = TezosAddress.FromStringUnsafe configuration.QuorumContract
+                  MinterContract = TezosAddress.FromStringUnsafe configuration.MinterContract
+                  ChainId = configuration.Node.ChainId }
+
+            let service: MinterWorkflow = Minting.workflow signer target
+            service :> obj
+
+        this.Add(ServiceDescriptor(typeof<MinterWorkflow>, createMinterWorkflow, ServiceLifetime.Singleton))
+        this
+
+
+    member this.AddUnwrapWorkflow() =
+        let createUnwrapWorkflow (s: IServiceProvider) =
+            let signer = s.GetService<EthereumSigner>()
+
+            let configuration = s.GetService<EthereumConfiguration>()
+            let web3 = s.GetService<Web3>()
+
+            let service: UnwrapWorkflow =
+                Unwrap.workflow signer (Ethereum.Multisig.transactionHash web3) configuration.LockingContract
+
+            service :> obj
+
+        this.Add(ServiceDescriptor(typeof<UnwrapWorkflow>, createUnwrapWorkflow, ServiceLifetime.Singleton))
+        this
+
+    member this.AddEventStore() =
+        let createEventStore (s: IServiceProvider) =
+            let conf = s.GetService<IpfsConfiguration>()
+            let state = s.GetService<StateLiteDb>()
+            let ipfs = s.GetService<IpfsClient>()
+            EventStoreIpfs.Create(ipfs, conf.KeyName, state) :> obj
+
+        this.Add(ServiceDescriptor(typeof<EventStoreIpfs>, createEventStore, ServiceLifetime.Singleton))
         this
 
     member this.AddCommonServices(configuration: IConfiguration) =
@@ -197,3 +247,23 @@ type IServiceCollection with
             .AddTezosRpc()
             .AddTezosSigner(configuration)
             .AddEthereumSigner(configuration)
+            .AddEventStore()
+
+    member this.AddCommandBus() =
+        let createCommandBus (s: IServiceProvider) =
+            let minterWorkflow = s.GetService<MinterWorkflow>()
+            let unwrapWorkflow = s.GetService<UnwrapWorkflow>()
+
+            let paymentWorkflow =
+                s.GetService<ChangePaymentAddressWorkflow>()
+
+            let eventStore = s.GetService<EventStoreIpfs>()
+            CommandBus.build minterWorkflow unwrapWorkflow paymentWorkflow eventStore.Append :> obj
+
+        this
+            .AddMinterWorkflow()
+            .AddUnwrapWorkflow()
+            .AddPaymentAddressWorkflow()
+            .Add(ServiceDescriptor(typeof<ICommandBus>, createCommandBus, ServiceLifetime.Singleton))
+
+        this

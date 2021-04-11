@@ -1,10 +1,8 @@
 namespace Signer
 
 open Microsoft.Extensions.FileProviders
-open Microsoft.Extensions.Hosting
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
-open Microsoft.Extensions.Logging
 open Signer.Configuration
 open Signer.Worker.Minting
 open Signer.Worker.Publish
@@ -37,11 +35,11 @@ module Program =
     let configureServices (hostContext: WebHostBuilderContext) (services: IServiceCollection) =
         services
             .AddCommonServices(hostContext.Configuration)
+            .AddCommandBus()
             .AddPublisher()
             .AddMinter()
             .AddUnwrap()
-            .AddSigner(hostContext.Configuration)
-            .AddPaymentAddressWorkflow()
+            .AddSigner()
             .AddRouting()
             .AddGiraffe()
         |> ignore

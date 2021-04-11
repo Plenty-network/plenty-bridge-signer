@@ -68,8 +68,8 @@ type PaymentAddressPayload = { Address: string; Counter: uint64 }
 let paymentAddressHandler: HttpHandler =
     handleContext (fun ctx ->
         task {
-            let workflow =
-                ctx.GetService<ChangePaymentAddressWorkflow>()
+            let commandBus =
+                ctx.GetService<ICommandBus>()
 
             let! payload = ctx.BindJsonAsync<PaymentAddressPayload>()
 
@@ -78,7 +78,7 @@ let paymentAddressHandler: HttpHandler =
                   Counter = payload.Counter }
 
             printfn "%A" payload
-            let! result = workflow parameters
+            let! result = commandBus.PostAndReply (fun rc -> PaymentAddress  (parameters, rc))
 
             match result with
             | Ok { Signature = signature

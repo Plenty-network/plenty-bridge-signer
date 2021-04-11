@@ -43,12 +43,8 @@ let fakeSigner =
 
             Signature(bytes, [||]) |> AsyncResult.retn }
 
-let append<'e> =
-    fun (v: 'e) -> AsyncResult.ofSuccess (EventId "EventId", v)
-
-
 let workflow =
-    workflow fakeSigner append Factory.target
+    workflow fakeSigner Factory.target
 
 [<Fact>]
 let ``Should build erc20 wrap`` () =
@@ -60,7 +56,7 @@ let ``Should build erc20 wrap`` () =
         let! result = workflow { Log = filterLog; Event = p }
 
         match result with
-        | Ok (_, event) ->
+        | Ok event ->
             let expectedMint =
                 { Level = filterLog.BlockNumber.Value
                   TransactionHash = filterLog.TransactionHash
@@ -88,7 +84,7 @@ let ``Should build wrap erc721`` () =
         let! result = workflow { Log = filterLog; Event = p }
 
         match result with
-        | Ok (_, event) ->
+        | Ok (event) ->
             let expectedMint =
                 { Level = filterLog.BlockNumber.Value
                   TransactionHash = filterLog.TransactionHash
@@ -116,7 +112,7 @@ let ``Should build erc20 mint error on bad tezos address`` () =
         let! result = workflow { Log = filterLog; Event = p }
 
         match result with
-        | Ok (_, event) ->
+        | Ok (event) ->
             let expectedMint =
                 { Level = filterLog.BlockNumber.Value
                   TransactionHash = filterLog.TransactionHash
@@ -141,7 +137,7 @@ let ``Should build erc721 mint error on bad tezos address`` () =
         let! result = workflow { Log = filterLog; Event = p }
 
         match result with
-        | Ok (_, event) ->
+        | Ok (event) ->
             let expectedMint =
                 { Level = filterLog.BlockNumber.Value
                   TransactionHash = filterLog.TransactionHash

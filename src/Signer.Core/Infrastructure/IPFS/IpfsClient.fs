@@ -103,7 +103,7 @@ type Key(client: HttpClient) =
                 |> Seq.map (fun v -> { Name = v.Name; Id = v.Id })
                 |> Seq.toList
                 |> Seq.tryFind (fun v -> v.Name = name)
-                |> AsyncResult.ofOption "Key not found"
+                |> AsyncResult.ofOption (sprintf "IPFS Key not found %s" name)
 
             return! v
         }

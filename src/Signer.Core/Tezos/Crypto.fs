@@ -22,15 +22,19 @@ module Crypto =
             member this.Sign bytes = bytes |> k.Sign |> AsyncResult.retn }
 
     let awsSigner (client: IAmazonKeyManagementService) (keyId: string) =
-        { new TezosSigner with
-            member this.PublicAddress() =
-                let request = GetPublicKeyRequest()
-                request.KeyId <- keyId
 
-                client.GetPublicKeyAsync(request)
-                |> Async.AwaitTask
-                |> Async.map (fun r -> Keys.Secp256k1.keyFromSpki (r.PublicKey.ToArray()))
-                |> AsyncResult.catchAsync
+        let keyQuery =
+            let request = GetPublicKeyRequest()
+            request.KeyId <- keyId
+
+            client.GetPublicKeyAsync(request)
+            |> Async.AwaitTask
+            |> Async.map (fun r -> Keys.Secp256k1.keyFromSpki (r.PublicKey.ToArray()))
+            |> Async.Cache
+            |> AsyncResult.catchAsync
+        { new TezosSigner with
+            member this.PublicAddress() = keyQuery
+
 
             member this.Sign bytes =
                 let request = SignRequest()
@@ -57,14 +61,11 @@ module Crypto =
             |> Async.AwaitTask
             |> Async.map (fun v -> v.Value)
             |> Async.Cache
-
         { new TezosSigner with
             member this.PublicAddress() =
                 keyQuery
                 |> Async.map (fun v -> Keys.Secp256k1.keyFromJsonWebKey v.Key)
                 |> AsyncResult.catchAsync
-
-
 
             member this.Sign bytes =
                 async {

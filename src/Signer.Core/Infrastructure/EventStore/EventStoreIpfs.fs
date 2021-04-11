@@ -3,11 +3,12 @@ namespace Signer.EventStore
 open Newtonsoft.Json.Linq
 open Signer
 open Signer.IPFS
+open FSharpx.Control
 
 type private Message =
     | Append of DomainEvent * AsyncReplyChannel<Result<EventId * DomainEvent, string>>
     | GetHead of AsyncReplyChannel<Cid option>
-    | GetKey of AsyncReplyChannel<IpfsKey>
+    | GetKey of AsyncReplyChannel<Result<IpfsKey, string>>
 
 type EventStoreState =
     abstract PutHead: Cid -> unit
@@ -15,7 +16,10 @@ type EventStoreState =
 
 
 
-type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
+type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string) =
+
+    let key = client.Key.Find(keyName)
+
     let serialize =
         function
         | Erc20MintingSigned { Level = level
@@ -133,6 +137,8 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
 
     let publish (cid) =
         asyncResult {
+            let! key = key
+
             let r =
                 match cid with
                 | Some v ->
@@ -157,12 +163,17 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
                         | Ok v ->
                             rc.Reply(Ok(EventId(Cid.value v), e))
                             do! messageLoop (Some v)
-                        | Error err -> rc.Reply(Error err)
+                        | Result.Error err -> rc.Reply(Result.Error err)
                     | GetHead rc ->
                         rc.Reply head
                         do! messageLoop head
                     | GetKey rc ->
-                        rc.Reply key
+                        let! key = key
+
+                        match key with
+                        | Ok v -> rc.Reply(Ok v)
+                        | Result.Error _ as err -> rc.Reply(err)
+
                         do! messageLoop head
 
                 }
@@ -171,10 +182,7 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, key: IpfsKey) =
             |> Async.map (fun _ -> ()))
 
     static member Create(client: IpfsClient, keyName: string, state: EventStoreState) =
-        asyncResult {
-            let! key = client.Key.Find(keyName)
-            return EventStoreIpfs(client, state, key)
-        }
+        EventStoreIpfs(client, state, keyName)
 
     member this.Append(e: DomainEvent) =
         mailbox.PostAndAsyncReply(fun rc -> Append(e, rc))
