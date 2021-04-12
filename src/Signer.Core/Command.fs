@@ -18,95 +18,66 @@ type SignerCommand =
 
 
 type ICommandBus =
-    abstract Post : SignerCommand -> unit DomainResult
+    abstract Post: SignerCommand -> (EventId * DomainEvent) list DomainResult
 
-    abstract PostAndReply : (Reply<'r> -> SignerCommand) -> 'r DomainResult
-
-type CommandBus
-    (
-        minter: MinterWorkflow,
-        unwrap: UnwrapWorkflow,
-        paymentAddress: ChangePaymentAddressWorkflow,
-        append: _ Append
-    ) =
-
-    let dispatch (c: SignerCommand) =
-        let append = AsyncResult.bind append
-
-        match c with
-        | Unwrap (level, c) ->
-            unwrap level c
-            |> append
-            |> AsyncResult.map (fun _ -> ())
-        | Minting (l) ->
-            minter l
-            |> append
-            |> AsyncResult.map (fun _ -> ())
-        | PaymentAddress (p, rc) ->
-            paymentAddress p
-            |> AsyncResult.map
-                (fun r ->
-                    rc.Reply r
-                    r)
-            |> AsyncResult.map (fun _ -> ())
-
-    interface ICommandBus with
-
-        member this.Post(c: SignerCommand) =
-            c |> dispatch |> AsyncResult.map (fun _ -> ())
-
-        member this.PostAndReply(b: Reply<'r> -> SignerCommand) =
-            async {
-                let r = ref (Unchecked.defaultof<'r>)
-                let c = b (Reply(fun x -> r := x))
-                return! c |> dispatch |> AsyncResult.map (fun _ -> !r)
-            }
-
+    abstract PostAndReply: (Reply<'r> -> SignerCommand) -> ('r * (EventId * DomainEvent) list) DomainResult
 
 
 [<RequireQualifiedAccess>]
 module CommandBus =
 
-    let build
-        (minter: MinterWorkflow)
-        (unwrap: UnwrapWorkflow)
-        (paymentAddress: ChangePaymentAddressWorkflow)
-        (append: _ Append)
-        =
+    let build (minter: MinterWorkflow)
+              (unwrap: UnwrapWorkflow)
+              (paymentAddress: ChangePaymentAddressWorkflow)
+              (append: _ Append)
+              =
 
-        let busRef : ICommandBus ref =
-            ref
-                { new ICommandBus with
-                    member this.Post(_) = failwith "Not initialized"
-                    member this.PostAndReply(_) = failwith "Not initialized" }
+        let dispatch (c: SignerCommand) =
+            match c with
+            | Unwrap (level, c) -> unwrap level c
+            | Minting (l) -> minter l
+            | PaymentAddress (p, rc) ->
+                paymentAddress p
+                |> AsyncResult.map (fun r ->
+                    rc.Reply r
+                    r)
+                |> AsyncResult.map (fun _ -> Noop)
 
         let appendMiddleware (e: DomainEvent) =
             match e with
             | Erc20MintingFailed payload ->
-                append e
-                |> AsyncResult.bind
-                    (fun r ->
-                        asyncResult {
-                            let _ =
-                                (!busRef)
-                                    .Post(Unwrap(payload.Level, (UnwrapErc20FromWrappingError payload)))
+                dispatch (Unwrap(payload.Level, (UnwrapErc20FromWrappingError payload)))
+                |> AsyncResult.map (fun e' -> [ e; e' ])
 
-                            return r
-                        })
             | Erc721MintingFailed payload ->
-                append e
-                |> AsyncResult.bind
-                    (fun r ->
-                        asyncResult {
-                            let! _ =
-                                (!busRef)
-                                    .Post(Unwrap(payload.Level, (UnwrapErc721FromWrappingError payload)))
+                dispatch (Unwrap(payload.Level, (UnwrapErc721FromWrappingError payload)))
+                |> AsyncResult.map (fun e' -> [ e; e' ])
 
-                            return r
-                        })
-            | _ -> append e
+            | _ -> [ e ] |> AsyncResult.retn
+            |> AsyncResult.bind (fun el ->
+                let rec loop acc remaining =
+                    asyncResult {
+                        match remaining with
+                        | [] -> return acc
+                        | head :: tail ->
+                            let! a = append head
+                            return! loop (a :: acc) tail
+                    }
 
-        busRef
-        := CommandBus(minter, unwrap, paymentAddress, appendMiddleware) :> ICommandBus
+                loop [] el)
+        { new ICommandBus with
 
-        !busRef
+            member this.Post(c: SignerCommand) =
+                c |> dispatch |> AsyncResult.bind appendMiddleware
+
+            member this.PostAndReply(b: Reply<'r> -> SignerCommand) =
+                async {
+                    let r = ref (Unchecked.defaultof<'r>)
+                    let c = b (Reply(fun x -> r := x))
+
+                    return!
+                        c
+                        |> dispatch
+                        |> AsyncResult.bind appendMiddleware
+                        |> AsyncResult.map (fun v -> (!r, v))
+                } }

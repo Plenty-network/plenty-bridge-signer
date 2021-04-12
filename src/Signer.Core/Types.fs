@@ -111,6 +111,7 @@ type ErcMintError<'t> = {
 }
 
 type DomainEvent =
+    | Noop
     | Erc20MintingSigned of ErcMint<Erc20MintingParameters>
     | Erc721MintingSigned of ErcMint<Erc721MintingParameters>
     | Erc20UnwrapSigned of ErcUnwrap<Erc20UnwrapParameters>

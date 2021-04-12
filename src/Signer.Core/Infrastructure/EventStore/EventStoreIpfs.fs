@@ -147,35 +147,42 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
         function
 
         | Erc20MintingSigned (e) ->
-            e
-            |> toErc20MintingDto
-            |> toJson "Erc20MintingSigned"
+            Some
+                (e
+                 |> toErc20MintingDto
+                 |> toJson "Erc20MintingSigned")
 
         | Erc721MintingSigned (e) ->
-            e
-            |> toErc721MintingDto
-            |> toJson "Erc721MintingSigned"
+            Some
+                (e
+                 |> toErc721MintingDto
+                 |> toJson "Erc721MintingSigned")
 
         | Erc20UnwrapSigned (e) ->
-            e
-            |> toErc20UnwrapDto
-            |> toJson "Erc20UnwrapSigned"
+            Some
+                (e
+                 |> toErc20UnwrapDto
+                 |> toJson "Erc20UnwrapSigned")
 
 
         | Erc721UnwrapSigned (e) ->
-            e
-            |> toErc721UnwrapDto
-            |> toJson "Erc721UnwrapSigned"
+            Some
+                (e
+                 |> toErc721UnwrapDto
+                 |> toJson "Erc721UnwrapSigned")
 
         | Erc20MintingFailed e ->
-            e
-            |> toErc20MintingErrorDto
-            |> toJson "Erc20MintingFailed"
+            Some
+                (e
+                 |> toErc20MintingErrorDto
+                 |> toJson "Erc20MintingFailed")
 
         | Erc721MintingFailed e ->
-            e
-            |> toErc721MintingErrorDto
-            |> toJson "Erc721MintingFailed"
+            Some
+                (e
+                 |> toErc721MintingErrorDto
+                 |> toJson "Erc721MintingFailed")
+        | Noop -> None
 
     let link (Cid value) =
         let link = JObject()
@@ -184,13 +191,14 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
 
     let append event (head: Cid option) =
         asyncResult {
-            let payload = serialize event
+            match (serialize event) with
+            | Some payload ->
+                if head.IsSome then payload.["parent"] <- link head.Value
 
-            if head.IsSome then payload.["parent"] <- link head.Value
-
-            let! cid = client.Dag.PutDag(payload)
-            state.PutHead cid
-            return cid
+                let! cid = client.Dag.PutDag(payload)
+                state.PutHead cid
+                return cid
+            | None -> return Cid ""
         }
 
     let publish (cid) =
