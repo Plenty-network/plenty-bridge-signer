@@ -8,23 +8,25 @@ open Signer.Tezos
 
 let erc20Params (dto: ERC20WrapAskedEventDto) (log: FilterLog) =
     TezosAddress.FromString dto.TezosAddress
-    |> Result.map (fun v ->
-        { Erc20 = dto.Token
-          Amount = dto.Amount
-          Owner = v
-          EventId =
-              { BlockHash = log.BlockHash
-                LogIndex = log.LogIndex.Value } })
+    |> Result.map
+        (fun v ->
+            { Erc20 = dto.Token
+              Amount = dto.Amount
+              Owner = v
+              EventId =
+                  { BlockHash = log.BlockHash
+                    LogIndex = log.LogIndex.Value } })
 
 let erc721Params (dto: ERC721WrapAskedEventDto) (log: FilterLog) =
     TezosAddress.FromString dto.TezosAddress
-    |> Result.map (fun v ->
-        { TokenId = dto.TokenId
-          Owner = v
-          Erc721 = dto.Token
-          EventId =
-              { BlockHash = log.BlockHash
-                LogIndex = log.LogIndex.Value } })
+    |> Result.map
+        (fun v ->
+            { TokenId = dto.TokenId
+              Owner = v
+              Erc721 = dto.Token
+              EventId =
+                  { BlockHash = log.BlockHash
+                    LogIndex = log.LogIndex.Value } })
 
 
 
@@ -65,6 +67,9 @@ let erc20Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto: 
                     { Level = log.BlockNumber.Value
                       TransactionHash = log.TransactionHash
                       Reason = sprintf "Bad tezos address %s" dto.TezosAddress
+                      EventId =
+                          { BlockHash = log.BlockHash
+                            LogIndex = log.LogIndex.Value }
                       SignerAddress = address
                       Payload =
                           { ERC20 = dto.Token
@@ -115,6 +120,9 @@ let erc721Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto:
                       TransactionHash = log.TransactionHash
                       Reason = sprintf "Bad tezos address %s" dto.TezosAddress
                       SignerAddress = address
+                      EventId =
+                          { BlockHash = log.BlockHash
+                            LogIndex = log.LogIndex.Value }
                       Payload =
                           { ERC721 = dto.Token
                             Owner = dto.Owner
@@ -131,7 +139,7 @@ let erc721Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto:
 type MinterWorkflow = EthEventLog -> DomainResult<DomainEvent>
 
 
-let workflow (signer: TezosSigner) (target: Quorum): MinterWorkflow =
+let workflow (signer: TezosSigner) (target: Quorum) : MinterWorkflow =
     let erc20Workflow = erc20Workflow signer target
     let erc721Workflow = erc721Workflow signer target
 

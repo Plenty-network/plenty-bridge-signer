@@ -25,6 +25,7 @@ type QuorumDto =
 [<CLIMutable>]
 type ErcMintDto<'T> =
     { level: string
+      observedFact: string
       transactionHash: string
       parameters: 'T
       signerAddress: string
@@ -34,6 +35,7 @@ type ErcMintDto<'T> =
 [<CLIMutable>]
 type ErcUnwrapDto<'T> =
     { level: string
+      observedFact: string
       parameters: 'T
       signerAddress: string
       signature: string
@@ -53,3 +55,12 @@ type Erc721UnwrapParametersDto =
       erc721: string
       operationId: string }
 
+[<CLIMutable>]
+type ErcMintingErrorDto<'T> = 
+  {
+    level: string
+    transactionHash: string
+    signerAddress: string
+    reason: string
+    payload: 'T
+  }

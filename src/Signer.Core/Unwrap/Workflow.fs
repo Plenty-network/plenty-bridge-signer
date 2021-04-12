@@ -11,13 +11,14 @@ type EthereumAddress = EthereumAddress of string
 
 type UnwrapCommand =
     | UnwrapFromTezosUpdate of Update
-    | UnwrapFromWrappingError
+    | UnwrapErc20FromWrappingError of ErcMintError<Erc20MintingError>
+    | UnwrapErc721FromWrappingError of ErcMintError<Erc721MintingError>
 
 type UnwrapWorkflow = bigint -> UnwrapCommand -> DomainResult<DomainEvent>
 
-type private Erc20Workflow = bigint -> Erc20UnwrapParameters -> DomainResult<DomainEvent>
+type private Erc20Workflow = bigint -> ObservedFact -> Erc20UnwrapParameters -> DomainResult<DomainEvent>
 
-type private Erc721Workflow = bigint -> Erc721UnwrapParameters -> DomainResult<DomainEvent>
+type private Erc721Workflow = bigint -> ObservedFact -> Erc721UnwrapParameters -> DomainResult<DomainEvent>
 
 let private updateIdToString =
     function
@@ -36,7 +37,7 @@ let private route (erc20Workflow: Erc20Workflow) (erc721Workflow: Erc721Workflow
                   ERC20 = dto.Erc20
                   OperationId = updateIdToString id }
 
-            erc20Workflow level p
+            erc20Workflow level Burn p
         | Erc721Unwrapped dto ->
             let p =
                 { TokenId = dto.TokenId
@@ -44,11 +45,38 @@ let private route (erc20Workflow: Erc20Workflow) (erc721Workflow: Erc721Workflow
                   ERC721 = dto.Erc721
                   OperationId = updateIdToString id }
 
-            erc721Workflow level p
+            erc721Workflow level Burn p
         | _ -> AsyncResult.ofError "Wrong update type"
-    | UnwrapFromWrappingError -> AsyncResult.ofError "Not implemented"
+    | UnwrapErc20FromWrappingError ({ Level = level
+                                      Payload = payload
+                                      EventId = eventId }) ->
+        let p =
+            { Amount = payload.Amount
+              Owner = payload.Owner
+              ERC20 = payload.ERC20
+              OperationId = (sprintf "revert:%s/%O" eventId.BlockHash eventId.LogIndex) }
 
-let erc20Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) level (p: Erc20UnwrapParameters) =
+        erc20Workflow level MintingError p
+    | UnwrapErc721FromWrappingError ({ Level = level
+                                       Payload = payload
+                                       EventId = eventId }) ->
+
+        let p = 
+            { TokenId = payload.TokenId
+              Owner = payload.Owner
+              ERC721 = payload.ERC721
+              OperationId = (sprintf "revert:%s/%O" eventId.BlockHash eventId.LogIndex)
+            }
+        erc721Workflow level MintingError p
+        
+let erc20Workflow
+    (signer: EthereumSigner)
+    (pack: EthPack)
+    (lockingContract: string)
+    level
+    fact
+    (p: Erc20UnwrapParameters)
+    =
     asyncResult {
         let call = erc20TransferCall p
 
@@ -65,6 +93,7 @@ let erc20Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: str
         return
             Erc20UnwrapSigned
                 { Level = level
+                  ObservedFact = fact
                   Call =
                       { LockingContract = lockingContract
                         Signature = signature
@@ -72,7 +101,14 @@ let erc20Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: str
                         Parameters = p } }
     }
 
-let erc721Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) level (p: Erc721UnwrapParameters) =
+let erc721Workflow
+    (signer: EthereumSigner)
+    (pack: EthPack)
+    (lockingContract: string)
+    level
+    fact
+    (p: Erc721UnwrapParameters)
+    =
     asyncResult {
         let call = erc721SafeTransferCall lockingContract p
 
@@ -89,6 +125,7 @@ let erc721Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: st
         return
             Erc721UnwrapSigned
                 { Level = level
+                  ObservedFact = fact
                   Call =
                       { LockingContract = lockingContract
                         Signature = signature
@@ -96,7 +133,7 @@ let erc721Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: st
                         Parameters = p } }
     }
 
-let workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string): UnwrapWorkflow =
+let workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) : UnwrapWorkflow =
 
     let erc20Workflow =
         erc20Workflow signer pack lockingContract

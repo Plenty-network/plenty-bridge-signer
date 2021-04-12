@@ -118,6 +118,7 @@ let ``Should build erc20 mint error on bad tezos address`` () =
                   TransactionHash = filterLog.TransactionHash
                   Reason = "Bad tezos address bad_address"
                   SignerAddress = signerPubKey.PubKey.GetBase58()
+                  EventId = { BlockHash = "0xc279"; LogIndex = 10I } 
                   Payload =
                       { ERC20 = token
                         Owner = "owner"
@@ -143,6 +144,7 @@ let ``Should build erc721 mint error on bad tezos address`` () =
                   TransactionHash = filterLog.TransactionHash
                   Reason = "Bad tezos address bad_address"
                   SignerAddress = signerPubKey.PubKey.GetBase58()
+                  EventId = { BlockHash = "0xc279"; LogIndex = 10I } 
                   Payload =
                       { ERC721 = token
                         Owner = "owner"

@@ -2,7 +2,7 @@ namespace Signer
 
 open Netezos.Keys
 open Nichelson
-
+open System.Reactive.Linq
 
 type TezosSignature = Signature
 
@@ -62,8 +62,13 @@ type LockingContractCall<'T> =
       Signature: string
       Parameters: 'T }
 
+type ObservedFact = 
+  | Burn
+  | MintingError
+
 type ErcUnwrap<'T> =
     { Level: bigint
+      ObservedFact: ObservedFact
       Call: LockingContractCall<'T> }
 
 type Erc20UnwrapParameters =
@@ -100,6 +105,7 @@ type ErcMintError<'t> = {
     Level: bigint
     TransactionHash: string
     SignerAddress : string
+    EventId: EthEventId
     Reason: string
     Payload: 't
 }

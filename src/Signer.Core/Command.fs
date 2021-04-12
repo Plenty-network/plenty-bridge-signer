@@ -6,8 +6,6 @@ open Signer.Minting
 open Signer.PaymentAddress
 open Signer.Unwrap
 
-type Command<'p, 'r> = { Parameter: 'p }
-
 
 type Reply<'v>(replyf: 'v -> unit) =
     member this.Reply value = replyf value
@@ -20,14 +18,17 @@ type SignerCommand =
 
 
 type ICommandBus =
-    abstract Post: SignerCommand -> unit DomainResult
+    abstract Post : SignerCommand -> unit DomainResult
 
-    abstract PostAndReply: (Reply<'r> -> SignerCommand) -> 'r DomainResult
+    abstract PostAndReply : (Reply<'r> -> SignerCommand) -> 'r DomainResult
 
-type CommandBus(minter: MinterWorkflow,
-                unwrap: UnwrapWorkflow,
-                paymentAddress: ChangePaymentAddressWorkflow,
-                append: _ Append) =
+type CommandBus
+    (
+        minter: MinterWorkflow,
+        unwrap: UnwrapWorkflow,
+        paymentAddress: ChangePaymentAddressWorkflow,
+        append: _ Append
+    ) =
 
     let dispatch (c: SignerCommand) =
         let append = AsyncResult.bind append
@@ -43,9 +44,10 @@ type CommandBus(minter: MinterWorkflow,
             |> AsyncResult.map (fun _ -> ())
         | PaymentAddress (p, rc) ->
             paymentAddress p
-            |> AsyncResult.map (fun r ->
-                rc.Reply r
-                r)
+            |> AsyncResult.map
+                (fun r ->
+                    rc.Reply r
+                    r)
             |> AsyncResult.map (fun _ -> ())
 
     interface ICommandBus with
@@ -65,9 +67,46 @@ type CommandBus(minter: MinterWorkflow,
 [<RequireQualifiedAccess>]
 module CommandBus =
 
-    let build (minter: MinterWorkflow)
-              (unwrap: UnwrapWorkflow)
-              (paymentAddress: ChangePaymentAddressWorkflow)
-              (append: _ Append)
-              =
-        CommandBus(minter, unwrap, paymentAddress, append)
+    let build
+        (minter: MinterWorkflow)
+        (unwrap: UnwrapWorkflow)
+        (paymentAddress: ChangePaymentAddressWorkflow)
+        (append: _ Append)
+        =
+
+        let busRef : ICommandBus ref =
+            ref
+                { new ICommandBus with
+                    member this.Post(_) = failwith "Not initialized"
+                    member this.PostAndReply(_) = failwith "Not initialized" }
+
+        let appendMiddleware (e: DomainEvent) =
+            match e with
+            | Erc20MintingFailed payload ->
+                append e
+                |> AsyncResult.bind
+                    (fun r ->
+                        asyncResult {
+                            let _ =
+                                (!busRef)
+                                    .Post(Unwrap(payload.Level, (UnwrapErc20FromWrappingError payload)))
+
+                            return r
+                        })
+            | Erc721MintingFailed payload ->
+                append e
+                |> AsyncResult.bind
+                    (fun r ->
+                        asyncResult {
+                            let! _ =
+                                (!busRef)
+                                    .Post(Unwrap(payload.Level, (UnwrapErc721FromWrappingError payload)))
+
+                            return r
+                        })
+            | _ -> append e
+
+        busRef
+        := CommandBus(minter, unwrap, paymentAddress, appendMiddleware) :> ICommandBus
+
+        !busRef
