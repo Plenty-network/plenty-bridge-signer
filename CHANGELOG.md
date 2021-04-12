@@ -5,25 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+* Sign an unwrap, to release funds in case of a bad minting
+
+### Fixed
+* Signer node doesn't fail forever in case of a bad tezos minting address
+
 ## [0.3.1] - 2021-03-19
 ### Changed
 * New minter contract parameters layout in events
 
 ## [0.3.0] - 2021-03-09
-### Adds
+### Added
 * Adds signer address in events payload
 
-### Changes
+### Changed
 * better keys in json log
 
 ## [0.2.1] - 2021-03-07
 
-### Changes
+### Changed
 * Default logging in json
 
 ## [0.2.0] - 2021-03-03
 
-### Adds
+### Added
 * Sign set payment address requests
 
 ### Changed
