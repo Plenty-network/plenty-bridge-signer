@@ -1,7 +1,6 @@
 module Signer.``Unwrap workflow test``
 
 open FsUnit.Xunit
-open Newtonsoft.Json.Linq
 open Signer.Ethereum.Multisig
 open TzWatch.Domain
 open Xunit
@@ -28,7 +27,7 @@ let ``Should build erc20 unwrap`` () =
               Value =
                   EntryPointCall
                       { Entrypoint = "unwrap_erc20"
-                        Parameters = JToken.Parse(System.IO.File.ReadAllText "./sample/unwrap_erc20_call.json") } }
+                        Parameters = System.IO.File.ReadAllText "./sample/unwrap_erc20_call.json" } }
 
         let! result = workflow 100I (UnwrapFromTezosUpdate p)
 
@@ -49,7 +48,7 @@ let ``Should build erc20 unwrap`` () =
                                   Owner = "0xecb2d6583858aae994f4248f8948e35516cfc9cf"
                                   ERC20 = "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735"
                                   OperationId = "hash/10" } } })
-        | Error e -> failwith e
+        | Result.Error e -> failwith e
     }
 
 [<Fact>]
@@ -61,7 +60,7 @@ let ``Should build erc721 unwrap`` () =
               Value =
                   EntryPointCall
                       { Entrypoint = "unwrap_erc721"
-                        Parameters = JToken.Parse(System.IO.File.ReadAllText "./sample/unwrap_erc721_call.json") } }
+                        Parameters = System.IO.File.ReadAllText "./sample/unwrap_erc721_call.json" } }
 
         let! result = workflow 100I (UnwrapFromTezosUpdate p)
 
@@ -82,7 +81,7 @@ let ``Should build erc721 unwrap`` () =
                                   Owner = "0xecb2d6583858aae994f4248f8948e35516cfc9cf"
                                   ERC721 = "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735"
                                   OperationId = "hash/10" } } })
-        | Error e -> failwith e
+        | Result.Error e -> failwith e
     }
 
 [<Fact>]
@@ -120,7 +119,7 @@ let ``Should build erc20 unwrap from error`` () =
                                   Owner = "0xecb2d6583858aae994f4248f8948e35516cfc9cf"
                                   ERC20 = "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735"
                                   OperationId = "revert:0xc279/100" } } })
-        | Error err -> failwith err
+        | Result.Error err -> failwith err
     }
 
 [<Fact>]
@@ -158,5 +157,5 @@ let ``Should build erc721 unwrap from error`` () =
                                   Owner = "0xecb2d6583858aae994f4248f8948e35516cfc9cf"
                                   ERC721 = "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735"
                                   OperationId = "revert:0xc279/100" } } })
-        | Error err -> failwith err
+        | Result.Error err -> failwith err
     }

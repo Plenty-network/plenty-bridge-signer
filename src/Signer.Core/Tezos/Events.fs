@@ -73,11 +73,11 @@ module Events =
     let (|Erc20Unwrapped|_|) =
         function
         | EntryPointCall { Entrypoint = e; Parameters = token } when e = ERC20UnwrappedEventDto.entryPointName ->
-            Some(ERC20UnwrappedEventDto.fromJson token)
+            Some(ERC20UnwrappedEventDto.fromJson (JToken.Parse(token)))
         | _ -> None
 
     let (|Erc721Unwrapped|_|) =
         function
         | EntryPointCall { Entrypoint = e; Parameters = token } when e = ERC721UnwrappedEventDto.entryPointName ->
-            Some(ERC721UnwrappedEventDto.fromJson token)
+            Some(ERC721UnwrappedEventDto.fromJson (JToken.Parse token))
         | _ -> None

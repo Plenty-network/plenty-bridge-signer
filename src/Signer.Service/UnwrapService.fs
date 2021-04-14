@@ -97,7 +97,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
 
                 match result with
                 | Ok level -> state.PutTezosLevel(level)
-                | Error err -> return raise (ApplicationException(err))
+                | Result.Error err -> return raise (ApplicationException(err))
             })
 
 
