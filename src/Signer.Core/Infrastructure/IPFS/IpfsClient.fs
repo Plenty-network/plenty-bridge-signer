@@ -24,9 +24,11 @@ type private NameResolveResponse = JsonProvider<"""{"Path":"/ipfs/v"}""">
 
 module private Http =
     let serializer =
-        JsonSerializer.Create
-            (JsonSerializerSettings
-                (ContractResolver = DefaultContractResolver(NamingStrategy = SnakeCaseNamingStrategy())))
+        JsonSerializer.Create(
+            JsonSerializerSettings(
+                ContractResolver = DefaultContractResolver(NamingStrategy = SnakeCaseNamingStrategy())
+            )
+        )
 
     let jsonToStream obj (stream: MemoryStream) =
         use sw =
@@ -46,8 +48,10 @@ module private Http =
         let content = streamContent obj
 
         let form =
-            new MultipartFormDataContent("Upload----"
-                                         + DateTime.Now.ToString(CultureInfo.InvariantCulture))
+            new MultipartFormDataContent(
+                "Upload----"
+                + DateTime.Now.ToString(CultureInfo.InvariantCulture)
+            )
 
         form.Add content
         form
@@ -63,10 +67,15 @@ module private Http =
                 r
                 |> Async.AwaitTask
                 |> Async.Catch
-                |> Async.map (fun v ->
-                    match v with
-                    | Choice1Of2 v -> if not v.IsSuccessStatusCode then Error v.ReasonPhrase else Ok v
-                    | Choice2Of2 err -> Error err.Message)
+                |> Async.map
+                    (fun v ->
+                        match v with
+                        | Choice1Of2 v ->
+                            if not v.IsSuccessStatusCode then
+                                Error v.ReasonPhrase
+                            else
+                                Ok v
+                        | Choice2Of2 err -> Error err.Message)
 
             let! body =
                 response.Content.ReadAsStringAsync()
@@ -109,7 +118,7 @@ type Key(client: HttpClient) =
         }
 
 type Name(client: HttpClient) =
-    member this.Publish((Cid cid), ?key: string, ?lifetime: string, ?ttl: string) =
+    member this.Publish(Cid cid, ?key: string, ?lifetime: string, ?ttl: string) =
         let query = HttpUtility.ParseQueryString ""
         query.["arg"] <- cid
         query.["key"] <- defaultArg key "self"
@@ -118,9 +127,10 @@ type Name(client: HttpClient) =
 
         client.PostAsync("name/publish?" + query.ToString(), new StringContent(""))
         |> Http.mapResponse NamePublishResponse.Parse
-        |> AsyncResult.map (fun response ->
-            { Name = response.Name
-              Value = response.Value })
+        |> AsyncResult.map
+            (fun response ->
+                { Name = response.Name
+                  Value = response.Value })
 
 
 
@@ -146,9 +156,10 @@ type Dag(client: HttpClient) =
             query.["format"] <- defaultArg format "dag-cbor"
             query.["input-enc"] <- defaultArg encoding "json"
 
-            query.["pin"] <- (defaultArg pin true)
-                .ToString()
-                .ToLowerInvariant()
+            query.["pin"] <-
+                (defaultArg pin true)
+                    .ToString()
+                    .ToLowerInvariant()
 
             let! cid =
                 client.PostAsync("dag/put?" + query.ToString(), Http.multiPart data)
@@ -164,9 +175,10 @@ type IpfsClient(baseUrl: string) =
         let c = new HttpClient()
         c.Timeout <- TimeSpan.FromMinutes(5.0)
 
-        if not (baseUrl.EndsWith("/"))
-        then c.BaseAddress <- Uri(baseUrl + "/api/v0/")
-        else c.BaseAddress <- Uri(baseUrl + "api/v0/")
+        if not (baseUrl.EndsWith("/")) then
+            c.BaseAddress <- Uri(baseUrl + "/api/v0/")
+        else
+            c.BaseAddress <- Uri(baseUrl + "api/v0/")
 
         c
 

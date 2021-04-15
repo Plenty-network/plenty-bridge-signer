@@ -21,6 +21,7 @@ type PublishService(logger: ILogger<PublishService>, store: EventStoreIpfs) =
                     do! work ()
                 | Error err ->
                     logger.LogError("Error while publishing {err}", err)
+                    do! Async.Sleep(TimeSpan.FromMinutes(1.0))
                     do! work ()
             }
 

@@ -11,8 +11,8 @@ type private Message =
     | GetKey of AsyncReplyChannel<Result<IpfsKey, string>>
 
 type EventStoreState =
-    abstract PutHead: Cid -> unit
-    abstract GetHead: unit -> Cid option
+    abstract PutHead : Cid -> unit
+    abstract GetHead : unit -> Cid option
 
 
 type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string) =
@@ -30,12 +30,14 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
         result.["payload"] <- JObject.FromObject(payload)
         result
 
-    let toErc20MintingDto ({ Level = level
-                             TransactionHash = tx
-                             Call = { Quorum = quorum
-                                      Signature = signature
-                                      SignerAddress = address
-                                      Parameters = p } }: ErcMint<Erc20MintingParameters>) =
+    let toErc20MintingDto
+        ({ Level = level
+           TransactionHash = tx
+           Call = { Quorum = quorum
+                    Signature = signature
+                    SignerAddress = address
+                    Parameters = p } }: ErcMint<Erc20MintingParameters>)
+        =
         { level = level.ToString()
           observedFact = "Lock"
           signature = signature
@@ -52,12 +54,14 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
                 minterContract = quorum.MinterContract.Value
                 chainId = quorum.ChainId } }
 
-    let toErc721MintingDto ({ Level = level
-                              TransactionHash = tx
-                              Call = { Quorum = quorum
-                                       Signature = signature
-                                       SignerAddress = address
-                                       Parameters = p } }: ErcMint<Erc721MintingParameters>) =
+    let toErc721MintingDto
+        ({ Level = level
+           TransactionHash = tx
+           Call = { Quorum = quorum
+                    Signature = signature
+                    SignerAddress = address
+                    Parameters = p } }: ErcMint<Erc721MintingParameters>)
+        =
         { level = level.ToString()
           signature = signature
           observedFact = "Lock"
@@ -74,12 +78,14 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
                 minterContract = quorum.MinterContract.Value
                 chainId = quorum.ChainId } }
 
-    let toErc20UnwrapDto ({ Level = level
-                            ObservedFact = fact
-                            Call = { Signature = signature
-                                     SignerAddress = address
-                                     LockingContract = lockingContract
-                                     Parameters = p } }: ErcUnwrap<Erc20UnwrapParameters>) =
+    let toErc20UnwrapDto
+        ({ Level = level
+           ObservedFact = fact
+           Call = { Signature = signature
+                    SignerAddress = address
+                    LockingContract = lockingContract
+                    Parameters = p } }: ErcUnwrap<Erc20UnwrapParameters>)
+        =
         { level = level.ToString()
           observedFact = toFact fact
           signature = signature
@@ -91,12 +97,14 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
                 owner = p.Owner
                 operationId = p.OperationId } }
 
-    let toErc721UnwrapDto ({ Level = level
-                             ObservedFact = fact
-                             Call = { Signature = signature
-                                      SignerAddress = address
-                                      LockingContract = lockingContract
-                                      Parameters = p } }: ErcUnwrap<Erc721UnwrapParameters>) =
+    let toErc721UnwrapDto
+        ({ Level = level
+           ObservedFact = fact
+           Call = { Signature = signature
+                    SignerAddress = address
+                    LockingContract = lockingContract
+                    Parameters = p } }: ErcUnwrap<Erc721UnwrapParameters>)
+        =
         { level = level.ToString()
           signature = signature
           observedFact = toFact fact
@@ -108,12 +116,14 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
                 owner = p.Owner
                 operationId = p.OperationId } }
 
-    let toErc20MintingErrorDto ({ Level = level
-                                  SignerAddress = address
-                                  TransactionHash = txHash
-                                  Reason = reason
-                                  EventId = eventId
-                                  Payload = p }: ErcMintError<Erc20MintingError>) =
+    let toErc20MintingErrorDto
+        ({ Level = level
+           SignerAddress = address
+           TransactionHash = txHash
+           Reason = reason
+           EventId = eventId
+           Payload = p }: ErcMintError<Erc20MintingError>)
+        =
         { level = level.ToString()
           transactionHash = txHash
           signerAddress = address
@@ -125,12 +135,14 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
                 blockHash = eventId.BlockHash
                 logIndex = eventId.LogIndex } }
 
-    let toErc721MintingErrorDto ({ Level = level
-                                   SignerAddress = address
-                                   TransactionHash = txHash
-                                   Reason = reason
-                                   EventId = eventId
-                                   Payload = p }: ErcMintError<Erc721MintingError>) =
+    let toErc721MintingErrorDto
+        ({ Level = level
+           SignerAddress = address
+           TransactionHash = txHash
+           Reason = reason
+           EventId = eventId
+           Payload = p }: ErcMintError<Erc721MintingError>)
+        =
         { level = level.ToString()
           transactionHash = txHash
           signerAddress = address
@@ -146,42 +158,48 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
     let serialize =
         function
 
-        | Erc20MintingSigned (e) ->
-            Some
-                (e
-                 |> toErc20MintingDto
-                 |> toJson "Erc20MintingSigned")
+        | Erc20MintingSigned e ->
+            Some(
+                e
+                |> toErc20MintingDto
+                |> toJson "Erc20MintingSigned"
+            )
 
-        | Erc721MintingSigned (e) ->
-            Some
-                (e
-                 |> toErc721MintingDto
-                 |> toJson "Erc721MintingSigned")
+        | Erc721MintingSigned e ->
+            Some(
+                e
+                |> toErc721MintingDto
+                |> toJson "Erc721MintingSigned"
+            )
 
-        | Erc20UnwrapSigned (e) ->
-            Some
-                (e
-                 |> toErc20UnwrapDto
-                 |> toJson "Erc20UnwrapSigned")
+        | Erc20UnwrapSigned e ->
+            Some(
+                e
+                |> toErc20UnwrapDto
+                |> toJson "Erc20UnwrapSigned"
+            )
 
 
-        | Erc721UnwrapSigned (e) ->
-            Some
-                (e
-                 |> toErc721UnwrapDto
-                 |> toJson "Erc721UnwrapSigned")
+        | Erc721UnwrapSigned e ->
+            Some(
+                e
+                |> toErc721UnwrapDto
+                |> toJson "Erc721UnwrapSigned"
+            )
 
         | Erc20MintingFailed e ->
-            Some
-                (e
-                 |> toErc20MintingErrorDto
-                 |> toJson "Erc20MintingFailed")
+            Some(
+                e
+                |> toErc20MintingErrorDto
+                |> toJson "Erc20MintingFailed"
+            )
 
         | Erc721MintingFailed e ->
-            Some
-                (e
-                 |> toErc721MintingErrorDto
-                 |> toJson "Erc721MintingFailed")
+            Some(
+                e
+                |> toErc721MintingErrorDto
+                |> toJson "Erc721MintingFailed"
+            )
         | Noop -> None
 
     let link (Cid value) =
@@ -193,7 +211,8 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
         asyncResult {
             match (serialize event) with
             | Some payload ->
-                if head.IsSome then payload.["parent"] <- link head.Value
+                if head.IsSome then
+                    payload.["parent"] <- link head.Value
 
                 let! cid = client.Dag.PutDag(payload)
                 state.PutHead cid
@@ -201,7 +220,7 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
             | None -> return Cid ""
         }
 
-    let publish (cid) =
+    let publish cid =
         asyncResult {
             let! key = key
 
@@ -216,36 +235,37 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
         }
 
     let mailbox =
-        MailboxProcessor.Start(fun inbox ->
-            let rec messageLoop (head: Cid option) =
-                async {
-                    let! message = inbox.Receive()
+        MailboxProcessor.Start
+            (fun inbox ->
+                let rec messageLoop (head: Cid option) =
+                    async {
+                        let! message = inbox.Receive()
 
-                    match message with
-                    | Append (e, rc) ->
-                        let! cid = append e head
+                        match message with
+                        | Append (e, rc) ->
+                            let! cid = append e head
 
-                        match cid with
-                        | Ok v ->
-                            rc.Reply(Ok(EventId(Cid.value v), e))
-                            do! messageLoop (Some v)
-                        | Result.Error err -> rc.Reply(Result.Error err)
-                    | GetHead rc ->
-                        rc.Reply head
-                        do! messageLoop head
-                    | GetKey rc ->
-                        let! key = key
+                            match cid with
+                            | Ok v ->
+                                rc.Reply(Ok(EventId(Cid.value v), e))
+                                do! messageLoop (Some v)
+                            | Result.Error err -> rc.Reply(Result.Error err)
+                        | GetHead rc ->
+                            rc.Reply head
+                            do! messageLoop head
+                        | GetKey rc ->
+                            let! key = key
 
-                        match key with
-                        | Ok v -> rc.Reply(Ok v)
-                        | Result.Error _ as err -> rc.Reply(err)
+                            match key with
+                            | Ok v -> rc.Reply(Ok v)
+                            | Result.Error _ as err -> rc.Reply(err)
 
-                        do! messageLoop head
+                            do! messageLoop head
 
-                }
+                    }
 
-            (messageLoop (state.GetHead()))
-            |> Async.map (fun _ -> ()))
+                (messageLoop (state.GetHead()))
+                |> Async.map (fun _ -> ()))
 
     static member Create(client: IpfsClient, keyName: string, state: EventStoreState) =
         EventStoreIpfs(client, state, keyName)
