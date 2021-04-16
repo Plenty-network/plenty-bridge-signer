@@ -1,6 +1,5 @@
 module Signer.State.``LiteDB tests``
 
-open System.IO
 open FsUnit.Xunit
 open LiteDB
 open Signer.EventStore

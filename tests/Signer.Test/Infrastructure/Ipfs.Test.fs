@@ -2,7 +2,6 @@ module Signer.IPFS.``Client Test``
 
 open FsUnit.Xunit
 open Newtonsoft.Json.Linq
-open Nichelson
 open Signer.Ethereum.Contract
 open Xunit
 

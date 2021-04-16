@@ -155,14 +155,14 @@ module Result =
 module ResultComputationExpression =
 
     type ResultBuilder() =
-        member __.Return(x) = Ok x
-        member __.Bind(x, f) = Result.bind f x
+        member _.Return(x) = Ok x
+        member _.Bind(x, f) = Result.bind f x
 
-        member __.ReturnFrom(x) = x
+        member _.ReturnFrom(x) = x
         member this.Zero() = this.Return()
 
-        member __.Delay(f) = f
-        member __.Run(f) = f ()
+        member _.Delay(f) = f
+        member _.Run(f) = f ()
 
         member this.While(guard, body) =
             if not (guard ())
@@ -195,7 +195,7 @@ module ResultComputationExpression =
                 (sequence.GetEnumerator(),
                  (fun enum -> this.While(enum.MoveNext, this.Delay(fun () -> body enum.Current))))
 
-        member this.Combine(a, b) = this.Bind(a, (fun () -> b ()))
+        member this.Combine(a, b) = this.Bind(a, b)
 
     let result = ResultBuilder()
 
@@ -398,14 +398,14 @@ module AsyncResult =
 module AsyncResultComputationExpression =
 
     type AsyncResultBuilder() =
-        member __.Return(x) = AsyncResult.retn x
-        member __.Bind(x, f) = AsyncResult.bind f x
+        member _.Return(x) = AsyncResult.retn x
+        member _.Bind(x, f) = AsyncResult.bind f x
 
-        member __.ReturnFrom(x) = x
+        member _.ReturnFrom(x) = x
         member this.Zero() = this.Return()
 
-        member __.Delay(f) = f
-        member __.Run(f) = f ()
+        member _.Delay(f) = f
+        member _.Run(f) = f ()
 
         member this.While(guard, body) =
             if not (guard ())
@@ -423,7 +423,7 @@ module AsyncResultComputationExpression =
             finally
                 compensation ()
 
-        member this.Using(disposable: #System.IDisposable, body) =
+        member this.Using(disposable: #IDisposable, body) =
             let body' = fun () -> body disposable
 
             this.TryFinally
@@ -438,6 +438,6 @@ module AsyncResultComputationExpression =
                 (sequence.GetEnumerator(),
                  (fun enum -> this.While(enum.MoveNext, this.Delay(fun () -> body enum.Current))))
 
-        member this.Combine(a, b) = this.Bind(a, (fun () -> b ()))
+        member this.Combine(a, b) = this.Bind(a, b)
 
     let asyncResult = AsyncResultBuilder()

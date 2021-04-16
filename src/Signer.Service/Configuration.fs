@@ -13,7 +13,6 @@ open Nethereum.Web3
 open Nichelson
 open Signer.Ethereum
 open Signer.EventStore
-open Signer.EventStore
 open Signer.IPFS
 open Signer.Minting
 open Signer.PaymentAddress
@@ -60,7 +59,7 @@ type IServiceCollection with
             let liteDbPath = configuration.["LiteDB:Path"]
 
             let db =
-                new LiteDatabase(sprintf "Filename=%s;Connection=direct" liteDbPath)
+                new LiteDatabase$"Filename=%s{liteDbPath};Connection=direct"
             new StateLiteDb(db) :> obj
 
 
@@ -133,7 +132,7 @@ type IServiceCollection with
             | SignerType.Memory ->
                 let key = configuration.["Tezos:Signer:Key"]
                 ServiceDescriptor(typeof<TezosSigner>, Signer.Tezos.Crypto.memorySigner (Key.FromBase58 key))
-            | v -> failwith (sprintf "Unknown signer type: %A" v)
+            | v -> failwith $"Unknown signer type: %A{v}"
 
         this.Add(service)
         this
@@ -173,7 +172,7 @@ type IServiceCollection with
                 let signer = Signer.Ethereum.Crypto.memorySigner key
 
                 ServiceDescriptor(typeof<EthereumSigner>, signer)
-            | v -> failwith (sprintf "Unknown signer type: %A" v)
+            | v -> failwith $"Unknown signer type: %A{v}"
 
         this.Add(service)
         this

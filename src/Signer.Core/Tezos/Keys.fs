@@ -18,7 +18,7 @@ module Secp256k1 =
         PubKey.FromBytes(p, ECKind.Secp256k1)
 
     let private toTezosSignature (parsed: ECDSASignature) =
-        let result = Array.zeroCreate<byte> (64)
+        let result = Array.zeroCreate<byte> 64
         let rBytes = parsed.R.ToByteArrayUnsigned()
         let sBytes = parsed.S.ToByteArrayUnsigned()
         rBytes.CopyTo(result, 32 - rBytes.Length)

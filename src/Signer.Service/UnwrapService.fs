@@ -25,9 +25,9 @@ type UnwrapService(logger: ILogger<UnwrapService>,
 
     let idToString =
         function
-        | Operation { OpgHash = hash; Counter = counter } -> sprintf "Hash:%s Counter:%i" hash counter
+        | Operation { OpgHash = hash; Counter = counter } -> $"Hash:%s{hash} Counter:%i{counter}"
         | InternalOperation ({ OpgHash = hash; Counter = counter }, nonce) ->
-            sprintf "Hash:%s Counter:%i Nonce:%i" hash counter nonce
+            $"Hash:%s{hash} Counter:%i{counter} Nonce:%i{nonce}"
 
     let apply level (updates: Update seq) =
         if updates |> Seq.length > 0
@@ -57,7 +57,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
                 |> Async.AwaitTask
                 |> AsyncResult.ofAsync
                 |> AsyncResult.map (fun v -> JToken.Parse(v.ToString()))
-                |> AsyncResult.catch (fun err -> sprintf "Couldn't connect to tezos node %s" err.Message)
+                |> AsyncResult.catch (fun err -> $"Couldn't connect to tezos node %s{err.Message}")
 
             lastBlock <- defaultArg (state.GetTezosLevel()) (bigint tezosConfiguration.InitialLevel)
             state.PutTezosLevel lastBlock
@@ -65,12 +65,12 @@ type UnwrapService(logger: ILogger<UnwrapService>,
 
             let! addr =
                 signer.PublicAddress()
-                |> AsyncResult.catch (fun err -> sprintf "Couldn't get public key %s" err.Message)
+                |> AsyncResult.catch (fun err -> $"Couldn't get public key %s{err.Message}")
 
             logger.LogInformation("Using signing eth address {hash}", addr)
             return ()
         }
-        |> AsyncResult.catch (fun err -> sprintf "Unexpected check error %s" err.Message)
+        |> AsyncResult.catch (fun err -> $"Unexpected check error %s{err.Message}")
 
     member this.Work() =
         logger.LogInformation("Resume tezos watch at level {level}", lastBlock)
@@ -84,8 +84,8 @@ type UnwrapService(logger: ILogger<UnwrapService>,
 
         Subscription.run
             poller
-            ({ Level = Height(int lastBlock + 1)
-               YieldEmpty = true })
+            { Level = Height(int lastBlock + 1)
+              YieldEmpty = true }
             parameters
         |> AsyncSeq.iterAsync (fun { BlockHeader = header
                                      Updates = updates } ->

@@ -18,7 +18,7 @@ let signerPubKey =
     Key.FromBase58 "edsk3na5J3BQh5DY8QGt4v8f3JLpGVfax6YaiRqcfLWmYKaRhs65LU"
 
 let constantSignature =
-    ("edsigtzeLrYsqoRxLiQiFbZwtkvR2aQE8u3be1UoFQqYxJYArp3N6jKbpnPKLK5Co51x34GHSCjKugCnJrb69UmKyEfmGYxpoSQ")
+    "edsigtzeLrYsqoRxLiQiFbZwtkvR2aQE8u3be1UoFQqYxJYArp3N6jKbpnPKLK5Co51x34GHSCjKugCnJrb69UmKyEfmGYxpoSQ"
 
 let token =
     "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735"
@@ -84,7 +84,7 @@ let ``Should build wrap erc721`` () =
         let! result = workflow { Log = filterLog; Event = p }
 
         match result with
-        | Ok (event) ->
+        | Ok event ->
             let expectedMint =
                 { Level = filterLog.BlockNumber.Value
                   TransactionHash = filterLog.TransactionHash
@@ -112,7 +112,7 @@ let ``Should build erc20 mint error on bad tezos address`` () =
         let! result = workflow { Log = filterLog; Event = p }
 
         match result with
-        | Ok (event) ->
+        | Ok event ->
             let expectedMint =
                 { Level = filterLog.BlockNumber.Value
                   TransactionHash = filterLog.TransactionHash
@@ -138,7 +138,7 @@ let ``Should build erc721 mint error on bad tezos address`` () =
         let! result = workflow { Log = filterLog; Event = p }
 
         match result with
-        | Ok (event) ->
+        | Ok event ->
             let expectedMint =
                 { Level = filterLog.BlockNumber.Value
                   TransactionHash = filterLog.TransactionHash

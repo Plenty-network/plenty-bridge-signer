@@ -27,9 +27,9 @@ let statusHandler: HttpHandler =
             (defaultArg (s.GetTezosLevel()) 0I).ToString()
 
         ctx.WriteJsonAsync
-            ({| head = head
-                tezosLevel = tezos
-                ethereumLevel = eth |})
+            {| head = head
+               tezosLevel = tezos
+               ethereumLevel = eth |}
 
         )
 
@@ -76,7 +76,7 @@ let paymentAddressHandler: HttpHandler =
                 { Address = TezosAddress.FromStringUnsafe payload.Address
                   Counter = payload.Counter }
 
-            printfn "%A" payload
+            printfn $"%A{payload}"
             let! result = commandBus.PostAndReply(fun rc -> PaymentAddress(parameters, rc))
 
             match result with
@@ -98,6 +98,6 @@ let paymentAddressHandler: HttpHandler =
         })
 
 let endpoints =
-    [ GET [ route "status" (statusHandler)
+    [ GET [ route "status" statusHandler
             route "keys" keysHandler ]
       POST [ route "signatures/payment_address" paymentAddressHandler ] ]

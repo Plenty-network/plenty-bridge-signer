@@ -1,7 +1,6 @@
 module Signer.PaymentAddress
 
 open Signer.Tezos
-open FSharpx.Control
 
 type ChangePaymentAddressCall =
     { Signature: string

@@ -23,7 +23,7 @@ module Multisig =
                               (pair (address %owner) (nat %token_id))))))"
 
     let private minterPayload =
-        sprintf "(pair (pair chain_id address) (pair %s address))" minterEntrypoints
+        $"(pair (pair chain_id address) (pair %s{minterEntrypoints} address))"
 
     let private minterPayloadType = ContractParameters minterPayload
 
@@ -94,7 +94,7 @@ module Multisig =
         { QuorumContract = multisig
           MinterContract = benderContract
           ChainId = chainId }
-        ({ Address = address; Counter = counter })
+        { Address = address; Counter = counter }
         =
         try 
             let payload = Tuple [StringArg chainId ; AddressArg multisig ; IntArg (bigint counter) ; AddressArg benderContract ; AddressArg address]

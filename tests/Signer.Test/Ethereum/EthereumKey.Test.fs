@@ -6,16 +6,7 @@ open System.Text
 open Amazon
 open Amazon.KeyManagementService
 open Azure.Identity
-open Azure.Security.KeyVault.Keys
-open Azure.Security.KeyVault.Keys.Cryptography
 open Nethereum.Signer
-open Nethereum.Signer
-open Nethereum.Signer.Crypto
-open Org.BouncyCastle.Math
-open Org.BouncyCastle.Math.EC
-open Org.BouncyCastle.Math.EC
-open Org.BouncyCastle.Math.EC
-open Signer.Core
 open Xunit
 open FsUnit.Xunit
 open Signer.Ethereum

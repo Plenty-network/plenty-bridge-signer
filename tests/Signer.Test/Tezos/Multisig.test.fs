@@ -36,7 +36,7 @@ let ``Should pack mint fungible`` () =
 
     let v =
         Multisig.packMintErc20 target mintErc20
-        |> Result.map (Encoder.byteToHex)
+        |> Result.map Encoder.byteToHex
 
     match v with
     | Ok v ->
@@ -58,7 +58,7 @@ let ``Should pack mint nft`` () =
 
     let v =
         Multisig.packMintErc721 target mint
-        |> Result.map (Encoder.byteToHex)
+        |> Result.map Encoder.byteToHex
 
     match v with
     | Ok v ->

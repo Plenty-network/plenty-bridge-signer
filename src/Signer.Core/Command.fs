@@ -35,7 +35,7 @@ module CommandBus =
         let dispatch (c: SignerCommand) =
             match c with
             | Unwrap (level, c) -> unwrap level c
-            | Minting (l) -> minter l
+            | Minting l -> minter l
             | PaymentAddress (p, rc) ->
                 paymentAddress p
                 |> AsyncResult.map (fun r ->
@@ -72,7 +72,7 @@ module CommandBus =
 
             member this.PostAndReply(b: Reply<'r> -> SignerCommand) =
                 async {
-                    let r = ref (Unchecked.defaultof<'r>)
+                    let r = ref Unchecked.defaultof<'r>
                     let c = b (Reply(fun x -> r := x))
 
                     return!

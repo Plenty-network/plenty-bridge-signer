@@ -2,7 +2,6 @@ namespace Signer
 
 open Netezos.Keys
 open Nichelson
-open System.Reactive.Linq
 
 type TezosSignature = Signature
 

@@ -66,7 +66,7 @@ let erc20Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto: 
                 Erc20MintingFailed
                     { Level = log.BlockNumber.Value
                       TransactionHash = log.TransactionHash
-                      Reason = sprintf "Bad tezos address %s" dto.TezosAddress
+                      Reason = $"Bad tezos address %s{dto.TezosAddress}"
                       EventId =
                           { BlockHash = log.BlockHash
                             LogIndex = log.LogIndex.Value }
@@ -118,7 +118,7 @@ let erc721Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto:
                 Erc721MintingFailed
                     { Level = log.BlockNumber.Value
                       TransactionHash = log.TransactionHash
-                      Reason = sprintf "Bad tezos address %s" dto.TezosAddress
+                      Reason = $"Bad tezos address %s{dto.TezosAddress}"
                       SignerAddress = address
                       EventId =
                           { BlockHash = log.BlockHash

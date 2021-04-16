@@ -22,12 +22,12 @@ type private Erc721Workflow = bigint -> ObservedFact -> Erc721UnwrapParameters -
 
 let private updateIdToString =
     function
-    | InternalOperation ({ OpgHash = hash; Counter = counter }, nonce) -> sprintf "%s/%i/%i" hash counter nonce
-    | Operation { OpgHash = hash; Counter = counter } -> sprintf "%s/%i" hash counter
+    | InternalOperation ({ OpgHash = hash; Counter = counter }, nonce) -> $"%s{hash}/%i{counter}/%i{nonce}"
+    | Operation { OpgHash = hash; Counter = counter } -> $"%s{hash}/%i{counter}"
 
 let private route (erc20Workflow: Erc20Workflow) (erc721Workflow: Erc721Workflow) level command =
     match command with
-    | UnwrapFromTezosUpdate ({ Value = value; UpdateId = id }) ->
+    | UnwrapFromTezosUpdate { Value = value; UpdateId = id } ->
 
         match value with
         | Erc20Unwrapped dto ->
@@ -54,7 +54,7 @@ let private route (erc20Workflow: Erc20Workflow) (erc721Workflow: Erc721Workflow
             { Amount = payload.Amount
               Owner = payload.Owner
               ERC20 = payload.ERC20
-              OperationId = (sprintf "revert:%s/%O" eventId.BlockHash eventId.LogIndex) }
+              OperationId = $"revert:%s{eventId.BlockHash}/{eventId.LogIndex}" }
 
         erc20Workflow level MintingError p
     | UnwrapErc721FromWrappingError ({ Level = level
@@ -65,7 +65,7 @@ let private route (erc20Workflow: Erc20Workflow) (erc721Workflow: Erc721Workflow
             { TokenId = payload.TokenId
               Owner = payload.Owner
               ERC721 = payload.ERC721
-              OperationId = (sprintf "revert:%s/%O" eventId.BlockHash eventId.LogIndex)
+              OperationId = $"revert:%s{eventId.BlockHash}/{eventId.LogIndex}"
             }
         erc721Workflow level MintingError p
         
@@ -143,4 +143,4 @@ let workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) 
 
     let route = route erc20Workflow erc721Workflow
 
-    fun level update -> route level update
+    route

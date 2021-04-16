@@ -83,7 +83,7 @@ module Watcher =
                 for change in changes do
                     yield change
 
-                yield! loop (maxBlock)
+                yield! loop maxBlock
             }
 
         loop from

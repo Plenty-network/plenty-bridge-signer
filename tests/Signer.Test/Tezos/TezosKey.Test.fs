@@ -2,11 +2,8 @@ module Signer.``Tezos crypto utils test``
 
 open System
 open System.IO
-open System.Security.Cryptography
 open System.Text
 open Azure.Identity
-open Azure.Security.KeyVault.Keys
-open Netezos.Keys
 open Xunit
 open FsUnit.Xunit
 open Signer.Tezos

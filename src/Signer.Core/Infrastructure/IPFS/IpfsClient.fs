@@ -58,7 +58,7 @@ module private Http =
 
     let uriBuilder (baseUrl: string) path =
         let result = UriBuilder(baseUrl)
-        result.Path <- sprintf "api/v0%s" path
+        result.Path <- $"api/v0%s{path}"
         result
 
     let mapResponse (mapper: string -> 't) (r: Task<HttpResponseMessage>) =
@@ -112,7 +112,7 @@ type Key(client: HttpClient) =
                 |> Seq.map (fun v -> { Name = v.Name; Id = v.Id })
                 |> Seq.toList
                 |> Seq.tryFind (fun v -> v.Name = name)
-                |> AsyncResult.ofOption (sprintf "IPFS Key not found %s" name)
+                |> AsyncResult.ofOption $"IPFS Key not found : %s{name}"
 
             return! v
         }
