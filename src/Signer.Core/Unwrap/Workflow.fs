@@ -65,7 +65,7 @@ let private route (erc20Workflow: Erc20Workflow) (erc721Workflow: Erc721Workflow
             { TokenId = payload.TokenId
               Owner = payload.Owner
               ERC721 = payload.ERC721
-              OperationId = $"revert:%s{eventId.BlockHash}/{eventId.LogIndex}"
+              OperationId = $"revert:%s{eventId.BlockHash}:{eventId.LogIndex}"
             }
         erc721Workflow level MintingError p
         

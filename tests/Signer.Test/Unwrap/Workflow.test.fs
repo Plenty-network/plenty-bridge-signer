@@ -156,6 +156,6 @@ let ``Should build erc721 unwrap from error`` () =
                                 { TokenId = 1337I
                                   Owner = "0xecb2d6583858aae994f4248f8948e35516cfc9cf"
                                   ERC721 = "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735"
-                                  OperationId = "revert:0xc279/100" } } })
+                                  OperationId = "revert:0xc279:100" } } })
         | Result.Error err -> failwith err
     }
