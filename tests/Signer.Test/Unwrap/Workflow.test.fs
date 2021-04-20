@@ -118,7 +118,7 @@ let ``Should build erc20 unwrap from error`` () =
                                 { Amount = 1000I
                                   Owner = "0xecb2d6583858aae994f4248f8948e35516cfc9cf"
                                   ERC20 = "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735"
-                                  OperationId = "revert:0xc279/100" } } })
+                                  OperationId = "revert:0xc279:100" } } })
         | Result.Error err -> failwith err
     }
 
