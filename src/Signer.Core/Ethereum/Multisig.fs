@@ -41,12 +41,16 @@ let erc721SafeTransferCall (lockingContract: string) (p: Erc721UnwrapParameters)
 
     let data =
         transfer
-            .CreateCallInput(lockingContract, p.Owner, p.TokenId)
+            .CreateCallInput(
+                lockingContract,
+                p.Owner,
+                p.TokenId
+            )
             .Data
 
     Hex.Decode(data.[2..])
 
-let transactionHash (web3: Web3): EthPack =
+let transactionHash (web3: Web3) : EthPack =
     fun { LockingContract = lockingContractAddress
           ErcContract = destination
           Data = data
@@ -60,7 +64,13 @@ let transactionHash (web3: Web3): EthPack =
                     .GetFunction("getTransactionHash")
                     .CallAsync<byte array>(destination, 0, data, operationId)
                 |> Async.AwaitTask
-                |> AsyncResult.ofAsync
+                |> Async.map
+                    (fun a ->
+                        if a = null then
+                            Error
+                                $"Error packing unwrap. Make sure %s{lockingContractAddress} exists on the targeted network"
+                        else
+                            Ok a)
                 |> AsyncResult.catch (fun err -> err.Message)
 
 
