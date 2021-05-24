@@ -75,7 +75,7 @@ module private Http =
                                 Error v.ReasonPhrase
                             else
                                 Ok v
-                        | Choice2Of2 err -> Error err.Message)
+                        | Choice2Of2 err -> Error $"IPFS communication error: %s{err.Message}")
 
             let! body =
                 response.Content.ReadAsStringAsync()
@@ -131,9 +131,6 @@ type Name(client: HttpClient) =
             (fun response ->
                 { Name = response.Name
                   Value = response.Value })
-
-
-
 
     member this.Resolve(path) =
         asyncResult {
