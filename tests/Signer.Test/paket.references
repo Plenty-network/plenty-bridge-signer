@@ -1,3 +1,4 @@
+group Test
 FsUnit.Xunit
 Microsoft.NET.Test.Sdk
 altcover

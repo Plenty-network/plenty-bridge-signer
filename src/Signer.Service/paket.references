@@ -2,5 +2,6 @@ Microsoft.Extensions.Hosting.WindowsServices
 TzWatch.Lib
 AWSSDK.Extensions.NETCore.Setup
 Giraffe
-Packaging.Targets
 Azure.Identity
+group Build
+    Packaging.Targets

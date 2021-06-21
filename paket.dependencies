@@ -1,20 +1,26 @@
 source https://api.nuget.org/v3/index.json
-source https://www.nuget.org/api/v2
+
 
 nuget Azure.Identity
-nuget Azure.Security.KeyVault.Keys 4.1.0
-nuget Nichelson 0.2.0
+nuget Azure.Security.KeyVault.Keys
+nuget Nichelson
 nuget TzWatch.Lib
 nuget Microsoft.Extensions.Hosting.WindowsServices
-nuget FsUnit.xUnit
-nuget Microsoft.NET.Test.Sdk
-nuget xunit.runner.visualstudio
-nuget HidSharp
-nuget Nethereum.Web3 3.8.0
-nuget AWSSDK.KeyManagementService 3.5.1.6
-nuget AWSSDK.Extensions.NETCore.Setup 3.3.101
+nuget Nethereum.Web3
+nuget AWSSDK.KeyManagementService 
+nuget AWSSDK.Extensions.NETCore.Setup 
 nuget LiteDB
-nuget Giraffe 5.0.0-rc-6 rc
-nuget altcover ~> 7
-nuget Packaging.Targets 0.1.189
+nuget Giraffe 5.0.0
+
 nuget Newtonsoft.Json == 13.0.1
+
+group Build
+    source https://api.nuget.org/v3/index.json
+    nuget Packaging.Targets
+
+group Test
+    source https://api.nuget.org/v3/index.json
+    nuget altcover
+    nuget FsUnit.xUnit
+    nuget Microsoft.NET.Test.Sdk
+    nuget xunit.runner.visualstudio
