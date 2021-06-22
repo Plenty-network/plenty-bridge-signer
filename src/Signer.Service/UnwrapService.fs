@@ -14,14 +14,17 @@ open Signer.Unwrap
 open TzWatch.Domain
 open TzWatch.Sync
 
-type UnwrapService(logger: ILogger<UnwrapService>,
-                   tezosRpc: TezosRpc,
-                   tezosConfiguration: TezosConfiguration,
-                   signer: EthereumSigner,
-                   state: StateLiteDb,
-                   commandBus: ICommandBus) =
+type UnwrapService
+    (
+        logger: ILogger<UnwrapService>,
+        tezosRpc: TezosRpc,
+        tezosConfiguration: TezosConfiguration,
+        signer: EthereumSigner,
+        state: StateLiteDb,
+        commandBus: ICommandBus
+    ) =
 
-    let mutable lastBlock: bigint = 2I
+    let mutable lastBlock : bigint = 2I
 
     let idToString =
         function
@@ -30,8 +33,8 @@ type UnwrapService(logger: ILogger<UnwrapService>,
             $"Hash:%s{hash} Counter:%i{counter} Nonce:%i{nonce}"
 
     let apply level (updates: Update seq) =
-        if updates |> Seq.length > 0
-        then logger.LogInformation("Processing Block {level} containing {nb} event(s)", level, updates |> Seq.length)
+        if updates |> Seq.length > 0 then
+            logger.LogInformation("Processing Block {level} containing {nb} event(s)", level, updates |> Seq.length)
 
         let applyOne (event: Update) =
             logger.LogDebug("Processing {id}", idToString event.UpdateId)
@@ -50,7 +53,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
 
         f (updates |> Seq.toList)
 
-    member this.Check =
+    member _.Check =
         asyncResult {
             let! blockHead =
                 tezosRpc.Blocks.Head.Header.GetAsync()
@@ -72,7 +75,7 @@ type UnwrapService(logger: ILogger<UnwrapService>,
         }
         |> AsyncResult.catch (fun err -> $"Unexpected check error %s{err.Message}")
 
-    member this.Work() =
+    member _.Work() =
         logger.LogInformation("Resume tezos watch at level {level}", lastBlock)
 
         let parameters =
@@ -81,27 +84,24 @@ type UnwrapService(logger: ILogger<UnwrapService>,
         let poller =
             SyncNode(tezosRpc, tezosConfiguration.Node.ChainId)
 
-
         Subscription.run
             poller
             { Level = Height(int lastBlock + 1)
               YieldEmpty = true }
             parameters
-        |> AsyncSeq.iterAsync (fun { BlockHeader = header
-                                     Updates = updates } ->
-            async {
-                if updates |> Seq.length > 0
-                then logger.LogDebug("Event from tezos level:{level} Block:{hash}", header.Level, header.Hash)
+        |> AsyncSeq.iterAsync
+            (fun { BlockHeader = header
+                   Updates = updates } ->
+                async {
+                    if updates |> Seq.length > 0 then
+                        logger.LogDebug("Event from tezos level:{level} Block:{hash}", header.Level, header.Hash)
 
-                let! result = apply header.Level updates
+                    let! result = apply header.Level updates
 
-                match result with
-                | Ok level -> state.PutTezosLevel(level)
-                | Result.Error err -> return raise (ApplicationException(err))
-            })
-
-
-
+                    match result with
+                    | Ok level -> state.PutTezosLevel(level)
+                    | Result.Error err -> return raise (ApplicationException(err))
+                })
 
 type IServiceCollection with
     member this.AddUnwrap() = this.AddSingleton<UnwrapService>()

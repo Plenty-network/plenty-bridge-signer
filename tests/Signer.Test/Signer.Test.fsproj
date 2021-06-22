@@ -4,16 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="sample\Factory.fs" />
-    <Compile Include="Tezos\TezosKey.Test.fs" />
-    <Compile Include="Tezos\Minter.Test.fs" />
-    <Compile Include="Tezos\Multisig.test.fs" />
-    <Compile Include="Minting\Workflow.test.fs" />
-    <Compile Include="Ethereum\Multisig.Test.fs" />
-    <Compile Include="Ethereum\EthereumKey.Test.fs" />
-    <Compile Include="Infrastructure\Ipfs.Test.fs" />
-    <Compile Include="Infrastructure\State.Test.fs" />
-    <Compile Include="Unwrap\Workflow.test.fs" />
+    <Compile Include="FactWithEthNode.fs" />
     <Content Include="sample\pub.der">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -26,6 +17,17 @@
     <Content Include="sample\unwrap_erc20_call.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Compile Include="sample\Factory.fs" />
+    <Compile Include="Tezos\TezosKey.Test.fs" />
+    <Compile Include="Tezos\Minter.Test.fs" />
+    <Compile Include="Tezos\Multisig.test.fs" />
+    <Compile Include="Minting\Workflow.test.fs" />
+    <Compile Include="Ethereum\Multisig.Test.fs" />
+    <Compile Include="Ethereum\EthereumKey.Test.fs" />
+    <Compile Include="Ethereum\Watcher.Test.fs" />
+    <Compile Include="Infrastructure\Ipfs.Test.fs" />
+    <Compile Include="Infrastructure\State.Test.fs" />
+    <Compile Include="Unwrap\Workflow.test.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Signer.Service\Signer.Service.fsproj" />

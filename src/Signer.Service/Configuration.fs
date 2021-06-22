@@ -59,7 +59,8 @@ type IServiceCollection with
             let liteDbPath = configuration.["LiteDB:Path"]
 
             let db =
-                new LiteDatabase$"Filename=%s{liteDbPath};Connection=direct"
+                new LiteDatabase $"Filename=%s{liteDbPath};Connection=direct"
+
             new StateLiteDb(db) :> obj
 
 
@@ -75,15 +76,21 @@ type IServiceCollection with
 
     member this.AddConfiguration(configuration: IConfiguration) =
         this
-            .AddSingleton(configuration
-                .GetSection("Tezos")
-                .Get<TezosConfiguration>())
-            .AddSingleton(configuration
-                .GetSection("Ethereum")
-                .Get<EthereumConfiguration>())
-            .AddSingleton(configuration
-                .GetSection("IPFS")
-                .Get<IpfsConfiguration>())
+            .AddSingleton(
+                configuration
+                    .GetSection("Tezos")
+                    .Get<TezosConfiguration>()
+            )
+            .AddSingleton(
+                configuration
+                    .GetSection("Ethereum")
+                    .Get<EthereumConfiguration>()
+            )
+            .AddSingleton(
+                configuration
+                    .GetSection("IPFS")
+                    .Get<IpfsConfiguration>()
+            )
 
     member this.AddWeb3() =
         let web3Factory (s: IServiceProvider) =
@@ -189,9 +196,7 @@ type IServiceCollection with
 
             PaymentAddress.workflow signer target :> obj
 
-        this.Add
-            (ServiceDescriptor
-                (typeof<ChangePaymentAddressWorkflow>, createPaymentAddressWorkflow, ServiceLifetime.Singleton))
+        this.Add(ServiceDescriptor(typeof<ChangePaymentAddressWorkflow>, createPaymentAddressWorkflow, ServiceLifetime.Singleton))
 
         this
 
@@ -206,7 +211,7 @@ type IServiceCollection with
                   MinterContract = TezosAddress.FromStringUnsafe configuration.MinterContract
                   ChainId = configuration.Node.ChainId }
 
-            let service: MinterWorkflow = Minting.workflow signer target
+            let service : MinterWorkflow = Minting.workflow signer target
             service :> obj
 
         this.Add(ServiceDescriptor(typeof<MinterWorkflow>, createMinterWorkflow, ServiceLifetime.Singleton))
@@ -220,7 +225,7 @@ type IServiceCollection with
             let configuration = s.GetService<EthereumConfiguration>()
             let web3 = s.GetService<Web3>()
 
-            let service: UnwrapWorkflow =
+            let service : UnwrapWorkflow =
                 Unwrap.workflow signer (Ethereum.Multisig.transactionHash web3) configuration.LockingContract
 
             service :> obj

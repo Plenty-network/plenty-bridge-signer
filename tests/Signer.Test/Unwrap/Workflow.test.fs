@@ -1,7 +1,10 @@
 module Signer.``Unwrap workflow test``
 
 open FsUnit.Xunit
+open Nethereum.Hex.HexTypes
+open Nethereum.RPC.Eth.DTOs
 open Signer.Ethereum.Multisig
+open Signer.Worker
 open TzWatch.Domain
 open Xunit
 open Signer.Unwrap
@@ -119,6 +122,45 @@ let ``Should build erc20 unwrap from error`` () =
                                   Owner = "0xecb2d6583858aae994f4248f8948e35516cfc9cf"
                                   ERC20 = "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735"
                                   OperationId = "revert:0xc279:100" } } })
+        | Result.Error err -> failwith err
+    }
+    
+[<Fact>]
+let ``Should build erc20 unwrap from transaction failure`` () =
+    async {
+        let filterLog =
+            FilterLog
+                (BlockHash = "0xc279",
+                 LogIndex = HexBigInteger(10I),
+                 BlockNumber = HexBigInteger(10I),
+                 TransactionHash = "TxHash")
+        let p =
+            UnwrapERc20FromExecutionFailure { Log = filterLog
+                                              Event = { TezosTransaction = "tezosid"
+                                                        TokenContract = "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735"
+                                                        Owner = "0xecb2d6583858aae994f4248f8948e35516cfc9cf"
+                                                        Amount = 1000I } }
+            
+
+        let! result = workflow 10I p
+
+        match result with
+        | Ok v ->
+            v
+            |> should
+                equal
+                (Erc20UnwrapSigned
+                    { Level = 10I
+                      ObservedFact = ObservedFact.ExecutionFailure
+                      Call =
+                          { LockingContract = "0x0cFa220dDA04DA22754baA1929798ec5E01A3483"
+                            SignerAddress = "PublicAddress"
+                            Signature = "Signature"
+                            Parameters =
+                                { Amount = 1000I
+                                  Owner = "0xecb2d6583858aae994f4248f8948e35516cfc9cf"
+                                  ERC20 = "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735"
+                                  OperationId = "retry:tezosid" } } })
         | Result.Error err -> failwith err
     }
 

@@ -11,6 +11,7 @@ open Signer.IPFS
 open Signer.State.LiteDB
 open Signer.Worker.Minting
 open Signer.Worker.Publish
+open Signer.Worker.TransactionFailure
 open Signer.Worker.Unwrap
 
 type SignerWorker(logger: ILogger<SignerWorker>,
@@ -18,12 +19,14 @@ type SignerWorker(logger: ILogger<SignerWorker>,
                   eventStore: EventStoreIpfs,
                   minter: MinterService,
                   publish: PublishService,
+                  transactionFailure: TransactionFailureService,
                   unwrap: UnwrapService,
                   lifeTime: IHostApplicationLifetime) =
 
     let mutable minterTask: Task<_> option = None
     let mutable publishTask: Task<_> option = None
     let mutable unwrapTask: Task<_> option = None
+    let mutable transactionFailureTask: _ Task option = None
     let cancelToken = new CancellationTokenSource()
 
     let check (result: AsyncResult<_, string>) =
@@ -61,6 +64,7 @@ type SignerWorker(logger: ILogger<SignerWorker>,
             asyncResult {
                 let! _ = check minter.Check
                 let! _ = check unwrap.Check
+                let! _ = check transactionFailure.Check
 
                 let cidOption = (state :> EventStoreState).GetHead()
                 logHead cidOption
@@ -77,10 +81,14 @@ type SignerWorker(logger: ILogger<SignerWorker>,
 
                 let unwrapWork =
                     unwrap.Work() |> Async.Catch |> Async.bind catch
+                    
+                let transactionFailureWork =
+                    transactionFailure.Work() |> Async.Catch |> Async.bind catch
 
                 minterTask <- Some(Async.StartAsTask(minterWork, cancellationToken = cancelToken.Token))
                 publishTask <- Some(Async.StartAsTask(publishWork, cancellationToken = cancelToken.Token))
                 unwrapTask <- Some(Async.StartAsTask(unwrapWork, cancellationToken = cancelToken.Token))
+                transactionFailureTask <- Some(Async.StartAsTask(transactionFailureWork, cancellationToken = cancelToken.Token))
                 logger.LogInformation("Workers started")
             }
             |> (fun a -> Async.StartAsTask(a, cancellationToken = ct)) :> Task

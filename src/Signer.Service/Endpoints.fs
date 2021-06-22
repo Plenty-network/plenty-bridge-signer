@@ -10,6 +10,7 @@ open Signer.IPFS
 open Signer.PaymentAddress
 open Signer.State.LiteDB
 open FSharp.Control.Tasks
+open Signer.Worker
 
 
 let statusHandler: HttpHandler =
@@ -26,9 +27,13 @@ let statusHandler: HttpHandler =
         let tezos =
             (defaultArg (s.GetTezosLevel()) 0I).ToString()
 
+        let transactionFailure =
+            (defaultArg (s.GetEthereumErrorLevel()) 0I).ToString()
+            
         ctx.WriteJsonAsync
             {| head = head
                tezosLevel = tezos
+               transactionFailureLevel = transactionFailure
                ethereumLevel = eth |}
 
         )

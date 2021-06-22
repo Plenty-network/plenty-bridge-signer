@@ -28,5 +28,7 @@ jobs:
       - name: Build
         run: dotnet build -c Release --no-restore
       - name: Test
+        env:
+          ETH_NODE: ${{ secrets.ETH_NODE }}
         run: dotnet test -c Release
       

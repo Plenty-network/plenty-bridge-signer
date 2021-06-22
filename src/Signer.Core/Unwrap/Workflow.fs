@@ -6,6 +6,7 @@ open Signer.Ethereum.Multisig
 open Signer.Tezos
 open TzWatch.Domain
 open Signer.Tezos.Events
+open Signer.Ethereum
 
 type EthereumAddress = EthereumAddress of string
 
@@ -13,6 +14,7 @@ type UnwrapCommand =
     | UnwrapFromTezosUpdate of Update
     | UnwrapErc20FromWrappingError of ErcMintError<Erc20MintingError>
     | UnwrapErc721FromWrappingError of ErcMintError<Erc721MintingError>
+    | UnwrapERc20FromExecutionFailure of TransactionFailure
 
 type UnwrapWorkflow = bigint -> UnwrapCommand -> DomainResult<DomainEvent>
 
@@ -24,6 +26,8 @@ let private updateIdToString =
     function
     | InternalOperation ({ OpgHash = hash; Counter = counter }, nonce) -> $"%s{hash}/%i{counter}/%i{nonce}"
     | Operation { OpgHash = hash; Counter = counter } -> $"%s{hash}/%i{counter}"
+
+let private revertId { BlockHash = hash; LogIndex = index } = $"revert:%s{hash}:{index}"
 
 let private route (erc20Workflow: Erc20Workflow) (erc721Workflow: Erc721Workflow) level command =
     match command with
@@ -54,7 +58,7 @@ let private route (erc20Workflow: Erc20Workflow) (erc721Workflow: Erc721Workflow
             { Amount = payload.Amount
               Owner = payload.Owner
               ERC20 = payload.ERC20
-              OperationId = $"revert:%s{eventId.BlockHash}:{eventId.LogIndex}" }
+              OperationId = revertId eventId}
 
         erc20Workflow level MintingError p
     | UnwrapErc721FromWrappingError ({ Level = level
@@ -65,18 +69,18 @@ let private route (erc20Workflow: Erc20Workflow) (erc721Workflow: Erc721Workflow
             { TokenId = payload.TokenId
               Owner = payload.Owner
               ERC721 = payload.ERC721
-              OperationId = $"revert:%s{eventId.BlockHash}:{eventId.LogIndex}" }
+              OperationId = revertId eventId }
 
         erc721Workflow level MintingError p
+    | UnwrapERc20FromExecutionFailure ({ Log = log; Event = event }) ->
+        let p =
+            { Amount = event.Amount
+              Owner = event.Owner
+              ERC20 = event.TokenContract
+              OperationId = $"retry:{event.TezosTransaction}"}
+        erc20Workflow log.BlockNumber.Value ExecutionFailure p
 
-let erc20Workflow
-    (signer: EthereumSigner)
-    (pack: EthPack)
-    (lockingContract: string)
-    level
-    fact
-    (p: Erc20UnwrapParameters)
-    =
+let erc20Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) level fact (p: Erc20UnwrapParameters) =
     asyncResult {
         let call = erc20TransferCall p
 
@@ -101,14 +105,7 @@ let erc20Workflow
                         Parameters = p } }
     }
 
-let erc721Workflow
-    (signer: EthereumSigner)
-    (pack: EthPack)
-    (lockingContract: string)
-    level
-    fact
-    (p: Erc721UnwrapParameters)
-    =
+let erc721Workflow (signer: EthereumSigner) (pack: EthPack) (lockingContract: string) level fact (p: Erc721UnwrapParameters) =
     asyncResult {
         let call = erc721SafeTransferCall lockingContract p
 

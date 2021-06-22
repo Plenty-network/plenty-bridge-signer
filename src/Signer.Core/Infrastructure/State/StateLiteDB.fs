@@ -12,6 +12,7 @@ module LiteDB =
     let private ethereumLevelId = BsonValue(1)
     let private tezosLevelId = BsonValue(2)
     let private eventStoreHeadId = BsonValue(0)
+    let private ethereumErrorLevelId = BsonValue(3)
 
     let private toBson<'a> id (value: 'a) =
         let doc = BsonDocument()
@@ -20,7 +21,10 @@ module LiteDB =
         doc
 
     let private toValue f (doc: BsonDocument) =
-        if isNull <| box doc then None else Some(f doc.["value"])
+        if isNull <| box doc then
+            None
+        else
+            Some(f doc.["value"])
 
     let private find (db: LiteDatabase) f id =
         db.GetCollection(stateCollection).FindById(id)
@@ -32,31 +36,40 @@ module LiteDB =
             .Upsert(toBson id value)
 
     type StateLiteDb(db: LiteDatabase) =
-        member this.PutEthereumLevel(v: bigint) =
+        member _.PutEthereumLevel(v: bigint) =
             save db ethereumLevelId (v.ToByteArray())
             |> ignore
 
             ()
 
-        member this.GetEthereumLevel() =
+        member _.GetEthereumLevel() =
             find db (fun v -> v.AsBinary |> bigint) ethereumLevelId
 
-        member this.PutTezosLevel(v: bigint) =
+        member _.PutEthereumErrorLevel(v: bigint) =
+            save db ethereumErrorLevelId (v.ToByteArray())
+            |> ignore
+
+            ()
+
+        member _.GetEthereumErrorLevel() =
+            find db (fun v -> v.AsBinary |> bigint) ethereumErrorLevelId
+
+        member _.PutTezosLevel(v: bigint) =
             save db tezosLevelId (v.ToByteArray()) |> ignore
             ()
 
-        member this.GetTezosLevel() =
+        member _.GetTezosLevel() =
             find db (fun v -> v.AsBinary |> bigint) tezosLevelId
 
         interface EventStoreState with
-            member this.PutHead(Cid value) =
+            member _.PutHead(Cid value) =
                 save db eventStoreHeadId (Encoding.UTF8.GetBytes value)
                 |> ignore
 
                 ()
 
-            member this.GetHead() =
+            member _.GetHead() =
                 find db (fun v -> Cid(Encoding.UTF8.GetString(v.AsBinary))) eventStoreHeadId
 
         interface IDisposable with
-            member this.Dispose() = db.Dispose()
+            member _.Dispose() = db.Dispose()

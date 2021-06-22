@@ -21,6 +21,8 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
         function
         | Burn -> "Burn"
         | MintingError -> "MintingError"
+        | ExecutionFailure -> "ExecutionFailure"
+        
 
     let key = client.Key.Find(keyName)
 

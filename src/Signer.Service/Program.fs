@@ -7,6 +7,7 @@ open Signer.Configuration
 open Signer.Worker.Minting
 open Signer.Worker.Publish
 open Signer.Worker.Unwrap
+open Signer.Worker.TransactionFailure
 open Signer.Service
 open Signer.Endpoints
 open Microsoft.Extensions.Configuration
@@ -39,6 +40,7 @@ module Program =
             .AddPublisher()
             .AddMinter()
             .AddUnwrap()
+            .AddTransactionFailure()
             .AddSigner()
             .AddRouting()
             .AddGiraffe()

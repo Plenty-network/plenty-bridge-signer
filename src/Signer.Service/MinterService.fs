@@ -47,7 +47,7 @@ type MinterService(logger: ILogger<MinterService>,
         f (events |> Seq.toList)
 
 
-    member this.Check =
+    member _.Check =
         asyncResult {
             let! block =
                 web3.Eth.Blocks.GetBlockNumber.SendRequestAsync()
@@ -70,10 +70,10 @@ type MinterService(logger: ILogger<MinterService>,
 
 
 
-    member this.Work() =
+    member _.Work() =
         logger.LogInformation("Resume ethereum watch at level {level}", startingBlock)
 
-        Watcher.watchFor
+        Watcher.watchForWrappingEvents
             web3
             { Contract = ethConfiguration.LockingContract
               Confirmations = ethConfiguration.Node.Confirmations

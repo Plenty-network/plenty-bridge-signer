@@ -18,6 +18,7 @@
     <Compile Include="Configuration.fs" />
     <Compile Include="MinterService.fs" />
     <Compile Include="UnwrapService.fs" />
+    <Compile Include="TransactionFailureService.fs" />
     <Compile Include="PublishService.fs" />
     <Compile Include="SignerWorker.fs" />
     <Compile Include="Endpoints.fs" />

@@ -19,6 +19,17 @@
         "CONFIG_FILE": "appsettings.testnet.json",
         "ASPNETCORE_URLS": "http://localhost:5000"
       }
+    },
+    "MainNet": {
+      "commandName": "Project",
+      "dotnetRunMessages": "true",
+      "workingDirectory": "./",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "CONFIG_FILE": "appsettings.mainnet.json",
+        "ASPNETCORE_URLS": "http://localhost:5000"
+      }
     }
   }
 }

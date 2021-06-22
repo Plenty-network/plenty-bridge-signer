@@ -1,6 +1,7 @@
 module Signer.Ethereum.Contract
 
 open System.Numerics
+open Nethereum.ABI
 open Nethereum.ABI.FunctionEncoding.Attributes
 
 [<Event("ERC20WrapAsked")>]
@@ -38,6 +39,15 @@ type ERC721WrapAskedEventDto(owner: string, token: string, tokenId: BigInteger, 
 
     [<Parameter("string", "tezosDestinationAddress", 4, false)>]
     member val TezosAddress = tezosAddress with get, set
+
+[<Event("ExecutionFailure")>]
+type LockingContractExecutionFailureDto(txHash:string) =
+  interface IEventDTO
+  
+  new() = LockingContractExecutionFailureDto("")
+  
+  [<Parameter("bytes32", "txHash")>]
+  member val TxHash = txHash with get, set
 
 let lockingContractAbi = """[
   {

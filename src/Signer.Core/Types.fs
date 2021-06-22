@@ -64,6 +64,7 @@ type LockingContractCall<'T> =
 type ObservedFact = 
   | Burn
   | MintingError
+  | ExecutionFailure
 
 type ErcUnwrap<'T> =
     { Level: bigint

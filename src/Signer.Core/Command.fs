@@ -18,19 +18,20 @@ type SignerCommand =
 
 
 type ICommandBus =
-    abstract Post: SignerCommand -> (EventId * DomainEvent) list DomainResult
+    abstract Post : SignerCommand -> (EventId * DomainEvent) list DomainResult
 
-    abstract PostAndReply: (Reply<'r> -> SignerCommand) -> ('r * (EventId * DomainEvent) list) DomainResult
+    abstract PostAndReply : (Reply<'r> -> SignerCommand) -> ('r * (EventId * DomainEvent) list) DomainResult
 
 
 [<RequireQualifiedAccess>]
 module CommandBus =
 
-    let build (minter: MinterWorkflow)
-              (unwrap: UnwrapWorkflow)
-              (paymentAddress: ChangePaymentAddressWorkflow)
-              (append: _ Append)
-              =
+    let build
+        (minter: MinterWorkflow)
+        (unwrap: UnwrapWorkflow)
+        (paymentAddress: ChangePaymentAddressWorkflow)
+        (append: _ Append)
+        =
 
         let dispatch (c: SignerCommand) =
             match c with
@@ -38,9 +39,10 @@ module CommandBus =
             | Minting l -> minter l
             | PaymentAddress (p, rc) ->
                 paymentAddress p
-                |> AsyncResult.map (fun r ->
-                    rc.Reply r
-                    r)
+                |> AsyncResult.map
+                    (fun r ->
+                        rc.Reply r
+                        r)
                 |> AsyncResult.map (fun _ -> Noop)
 
         let appendMiddleware (e: DomainEvent) =
@@ -54,23 +56,25 @@ module CommandBus =
                 |> AsyncResult.map (fun e' -> [ e; e' ])
 
             | _ -> [ e ] |> AsyncResult.retn
-            |> AsyncResult.bind (fun el ->
-                let rec loop acc remaining =
-                    asyncResult {
-                        match remaining with
-                        | [] -> return acc
-                        | head :: tail ->
-                            let! a = append head
-                            return! loop (a :: acc) tail
-                    }
+            |> AsyncResult.bind
+                (fun el ->
+                    let rec loop acc remaining =
+                        asyncResult {
+                            match remaining with
+                            | [] -> return acc
+                            | head :: tail ->
+                                let! a = append head
+                                return! loop (a :: acc) tail
+                        }
 
-                loop [] el)
+                    loop [] el)
+
         { new ICommandBus with
 
-            member this.Post(c: SignerCommand) =
+            member __.Post(c: SignerCommand) =
                 c |> dispatch |> AsyncResult.bind appendMiddleware
 
-            member this.PostAndReply(b: Reply<'r> -> SignerCommand) =
+            member __.PostAndReply(b: Reply<'r> -> SignerCommand) =
                 async {
                     let r = ref Unchecked.defaultof<'r>
                     let c = b (Reply(fun x -> r := x))
