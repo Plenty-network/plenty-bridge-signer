@@ -4,3 +4,4 @@ LiteDB
 AWSSDK.KeyManagementService
 TzWatch.Lib
 Azure.Security.KeyVault.Keys
+Microsoft.Extensions.Logging

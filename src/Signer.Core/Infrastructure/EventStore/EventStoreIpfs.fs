@@ -1,7 +1,9 @@
 namespace Signer.EventStore
 
+open Microsoft.Extensions.Logging
 open Newtonsoft.Json.Linq
 open Signer
+open Signer.EventStore
 open Signer.IPFS
 open FSharpx.Control
 
@@ -10,19 +12,71 @@ type private Message =
     | GetHead of AsyncReplyChannel<Cid option>
     | GetKey of AsyncReplyChannel<Result<IpfsKey, string>>
 
+type private PublisherMessage = Publish of Cid
+
 type EventStoreState =
     abstract PutHead : Cid -> unit
     abstract GetHead : unit -> Cid option
 
+type IpnsPublisher(client: IpfsClient, keyName: string, logger: ILogger) =
 
-type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string) =
+    let key = client.Key.Find keyName
+
+    let publish cid =
+        asyncResult {
+            let! key = key
+            logger.LogDebug("Publishing head")
+            let! { Name = name; Value = value } = client.Name.Publish(cid, key = key.Name)
+            logger.LogInformation("Head published {head}:{value}", name, value)
+        }
+
+    let mailbox =
+        MailboxProcessor.Start
+
+            (fun inbox ->
+
+                let rec readLatestLoop (oldMsg: PublisherMessage) =
+                    async {
+                        let! newMsg = inbox.TryReceive 0
+
+                        match newMsg with
+                        | None -> return oldMsg
+                        | Some newMsg -> return! readLatestLoop newMsg
+                    }
+
+                let rec messageLoop () =
+                    async {
+                        let! msg = inbox.Receive()
+                        let! message = readLatestLoop msg
+
+                        match message with
+                        | Publish cid ->
+                            let! r = publish cid
+
+                            match r with
+                            | Result.Error err -> logger.LogError("Error publishing head {}", err)
+                            | _ -> ()
+
+                        return! messageLoop ()
+                    }
+
+                messageLoop ()
+
+                )
+
+    member this.Publish cid = mailbox.Post(Publish cid)
+
+
+type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string, logger: ILogger<EventStoreIpfs>) =
+
+    let publisher = IpnsPublisher(client, keyName, logger)
 
     let toFact =
         function
         | Burn -> "Burn"
         | MintingError -> "MintingError"
         | ExecutionFailure -> "ExecutionFailure"
-        
+
 
     let key = client.Key.Find(keyName)
 
@@ -222,19 +276,8 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
             | None -> return Cid ""
         }
 
-    let publish cid =
-        asyncResult {
-            let! key = key
+    let publish = publisher.Publish
 
-            let r =
-                match cid with
-                | Some v ->
-                    client.Name.Publish(v, key = key.Name)
-                    |> AsyncResult.map (fun v -> v.Name)
-                | None -> AsyncResult.ofSuccess key.Name
-
-            return! r
-        }
 
     let mailbox =
         MailboxProcessor.Start
@@ -249,6 +292,7 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
 
                             match cid with
                             | Ok v ->
+                                publisher.Publish v
                                 rc.Reply(Ok(EventId(Cid.value v), e))
                                 do! messageLoop (Some v)
                             | Result.Error err -> rc.Reply(Result.Error err)
@@ -269,8 +313,8 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
                 (messageLoop (state.GetHead()))
                 |> Async.map (fun _ -> ()))
 
-    static member Create(client: IpfsClient, keyName: string, state: EventStoreState) =
-        EventStoreIpfs(client, state, keyName)
+    static member Create(client: IpfsClient, keyName: string, state: EventStoreState, logger: ILogger<EventStoreIpfs>) =
+        EventStoreIpfs(client, state, keyName, logger)
 
     member this.Append(e: DomainEvent) =
         mailbox.PostAndAsyncReply(fun rc -> Append(e, rc))
@@ -278,11 +322,11 @@ type EventStoreIpfs(client: IpfsClient, state: EventStoreState, keyName: string)
     member this.Publish() =
         async {
             let! head = mailbox.PostAndAsyncReply(GetHead)
-            return! publish head
+
+            match head with
+            | Some value -> publish value
+            | None -> ()
         }
 
     member this.GetKey() =
-        async {
-            let! key = mailbox.PostAndAsyncReply(GetKey)
-            return key
-        }
+        async { return! mailbox.PostAndAsyncReply(GetKey) }

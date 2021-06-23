@@ -5,7 +5,6 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
 open Signer.Configuration
 open Signer.Worker.Minting
-open Signer.Worker.Publish
 open Signer.Worker.Unwrap
 open Signer.Worker.TransactionFailure
 open Signer.Service
@@ -37,7 +36,6 @@ module Program =
         services
             .AddCommonServices(hostContext.Configuration)
             .AddCommandBus()
-            .AddPublisher()
             .AddMinter()
             .AddUnwrap()
             .AddTransactionFailure()

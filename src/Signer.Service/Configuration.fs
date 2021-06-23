@@ -6,6 +6,7 @@ open Azure.Identity
 open LiteDB
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Logging
 open Netezos.Keys
 open Netezos.Rpc
 open Nethereum.Signer
@@ -238,7 +239,8 @@ type IServiceCollection with
             let conf = s.GetService<IpfsConfiguration>()
             let state = s.GetService<StateLiteDb>()
             let ipfs = s.GetService<IpfsClient>()
-            EventStoreIpfs.Create(ipfs, conf.KeyName, state) :> obj
+            let logger = s.GetService<ILogger<EventStoreIpfs>>()
+            EventStoreIpfs.Create(ipfs, conf.KeyName, state, logger) :> obj
 
         this.Add(ServiceDescriptor(typeof<EventStoreIpfs>, createEventStore, ServiceLifetime.Singleton))
         this

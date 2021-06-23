@@ -10,7 +10,6 @@ open Signer.EventStore
 open Signer.IPFS
 open Signer.State.LiteDB
 open Signer.Worker.Minting
-open Signer.Worker.Publish
 open Signer.Worker.TransactionFailure
 open Signer.Worker.Unwrap
 
@@ -18,7 +17,6 @@ type SignerWorker(logger: ILogger<SignerWorker>,
                   state: StateLiteDb,
                   eventStore: EventStoreIpfs,
                   minter: MinterService,
-                  publish: PublishService,
                   transactionFailure: TransactionFailureService,
                   unwrap: UnwrapService,
                   lifeTime: IHostApplicationLifetime) =
@@ -72,12 +70,9 @@ type SignerWorker(logger: ILogger<SignerWorker>,
                 let! _ = check (eventStore.GetKey())
 
                 logger.LogInformation("All checks are green")
-
+                eventStore.Publish() |> Async.Start
                 let minterWork =
                     minter.Work() |> Async.Catch |> Async.bind catch
-
-                let publishWork =
-                    publish.Work() |> Async.Catch |> Async.bind catch
 
                 let unwrapWork =
                     unwrap.Work() |> Async.Catch |> Async.bind catch
@@ -86,7 +81,6 @@ type SignerWorker(logger: ILogger<SignerWorker>,
                     transactionFailure.Work() |> Async.Catch |> Async.bind catch
 
                 minterTask <- Some(Async.StartAsTask(minterWork, cancellationToken = cancelToken.Token))
-                publishTask <- Some(Async.StartAsTask(publishWork, cancellationToken = cancelToken.Token))
                 unwrapTask <- Some(Async.StartAsTask(unwrapWork, cancellationToken = cancelToken.Token))
                 transactionFailureTask <- Some(Async.StartAsTask(transactionFailureWork, cancellationToken = cancelToken.Token))
                 logger.LogInformation("Workers started")
