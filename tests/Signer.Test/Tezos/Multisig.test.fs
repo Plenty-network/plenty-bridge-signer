@@ -14,7 +14,7 @@ let benderContract =
     "KT1VUNmGa1JYJuNxNS4XDzwpsc9N1gpcCBN2%signer"
 
 
-let target: Quorum =
+let target : Quorum =
     { QuorumContract = TezosAddress.FromStringUnsafe multisig
       MinterContract = TezosAddress.FromStringUnsafe benderContract
       ChainId = "NetXm8tYqnMWky1" }
@@ -43,7 +43,7 @@ let ``Should pack mint fungible`` () =
         v
         |> should
             equal
-               "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c940007070508050507070a000000145592ec0cfb4dbc12d3ab100b257153436a1f0fea070707070a00000020c2796cf51a390d3049f55cc97b6584e14e8a4a9c89b934afee27b3ce9c396f7b000507070a00000016000046f146853a32c121cfdcd4f446876ae36c4afc5800a4010a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e6572"
+            "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c940007070508050507070a000000145592ec0cfb4dbc12d3ab100b257153436a1f0fea070707070a00000020c2796cf51a390d3049f55cc97b6584e14e8a4a9c89b934afee27b3ce9c396f7b000507070a00000016000046f146853a32c121cfdcd4f446876ae36c4afc5800a4010a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e6572"
     | Error err -> failwith err
 
 [<Fact>]
@@ -65,7 +65,41 @@ let ``Should pack mint nft`` () =
         v
         |> should
             equal
-               "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c940007070508050807070a000000145592ec0cfb4dbc12d3ab100b257153436a1f0fea070707070a00000020c2796cf51a390d3049f55cc97b6584e14e8a4a9c89b934afee27b3ce9c396f7b000507070a00000016000046f146853a32c121cfdcd4f446876ae36c4afc5800b9140a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e6572"
+            "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c940007070508050807070a000000145592ec0cfb4dbc12d3ab100b257153436a1f0fea070707070a00000020c2796cf51a390d3049f55cc97b6584e14e8a4a9c89b934afee27b3ce9c396f7b000507070a00000016000046f146853a32c121cfdcd4f446876ae36c4afc5800b9140a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e6572"
+    | Error err -> failwith err
+
+[<Fact>]
+let ``Should pack add nft`` () =
+    let addNft =
+        { EthContract = "0x01"
+          TezosContract = "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ" }
+
+    let v =
+        Multisig.packAddNft target addNft
+        |> Result.map Encoder.byteToHex
+
+    match v with
+    | Ok v ->
+        v
+        |> should equal "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c940007070505050807070a00000001010a000000160100f42eb1f25677dd7b0a94aba3a7aea61e2fd30d000a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e6572"
+    | Error err -> failwith err
+
+
+[<Fact>]
+let ``Should pack add fungible token`` () =
+    let addFungible =
+        { EthContract = "0x01"
+          TezosContract = "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ"
+          TokenId = 12u }
+
+    let v =
+        Multisig.packAddFungibleToken target addFungible
+        |> Result.map Encoder.byteToHex
+
+    match v with
+    | Ok v ->
+        v
+        |> should equal "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c940007070505050507070a000000010107070a000000160100f42eb1f25677dd7b0a94aba3a7aea61e2fd30d00000c0a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e6572"
     | Error err -> failwith err
 
 [<Fact>]
@@ -87,14 +121,23 @@ let ``Should sign`` () =
         signature
         |> should
             equal
-               "edsigu16VhLaBaPmEJTfze3Jqkpxd23kRP5TZUMZEMkHqd1dTSJVfPvUK3yx6F55XXnTvsZtUKUMM738gzgLPXs8jzEXWiY7SgA"
+            "edsigu16VhLaBaPmEJTfze3Jqkpxd23kRP5TZUMZEMkHqd1dTSJVfPvUK3yx6F55XXnTvsZtUKUMM738gzgLPXs8jzEXWiY7SgA"
     }
 
 [<Fact>]
 let ``Should pack sign payment address`` () =
-    let packed = Multisig.packChangePaymentAddress target {Address = TezosAddress.FromStringUnsafe "tz1exrEuATYhFmVSXhkCkkFzY72T75hpsthj" ; Counter = 1UL}
-    
-    let expected = "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c94000707000107070a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e65720a000000160000d3f99177aa262227a65b344416f85de34bf21420"
+    let packed =
+        Multisig.packChangePaymentAddress
+            target
+            { Address = TezosAddress.FromStringUnsafe "tz1exrEuATYhFmVSXhkCkkFzY72T75hpsthj"
+              Counter = 1UL }
+
+    let expected =
+        "0x05070707070a00000004a83650210a000000160191d2931b012d854529bb38991cb439283b157c94000707000107070a0000001c01e5251ca070e1082433a3445733139b318fa80ca1007369676e65720a000000160000d3f99177aa262227a65b344416f85de34bf21420"
+
     match packed with
-    | Ok packed ->  packed |> Encoder.byteToHex |> should equal expected
+    | Ok packed ->
+        packed
+        |> Encoder.byteToHex
+        |> should equal expected
     | Error err -> failwith err

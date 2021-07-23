@@ -20,6 +20,7 @@
     <Compile Include="Minting\Workflow.fs" />
     <Compile Include="Unwrap\Workflow.fs" />
     <Compile Include="PaymentAddress\Worflow.fs" />
+    <Compile Include="AddToken\Workflow.fs" />
     <Compile Include="Infrastructure\IPFS\Types.fs" />
     <Compile Include="Infrastructure\IPFS\IpfsClient.fs" />
     <Compile Include="Infrastructure\EventStore\Types.fs" />

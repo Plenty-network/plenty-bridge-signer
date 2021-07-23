@@ -15,15 +15,15 @@ type Signer = byte [] -> DomainResult<TezosSignature>
 
 type TezosSigner =
 
-    abstract PublicAddress: unit -> PubKey DomainResult
+    abstract PublicAddress : unit -> PubKey DomainResult
 
-    abstract Sign: byte [] -> TezosSignature DomainResult
+    abstract Sign : byte [] -> TezosSignature DomainResult
 
 type EthereumSigner =
 
-    abstract Sign: byte [] -> string DomainResult
+    abstract Sign : byte [] -> string DomainResult
 
-    abstract PublicAddress: unit -> string DomainResult
+    abstract PublicAddress : unit -> string DomainResult
 
 type EthEventId = { BlockHash: string; LogIndex: bigint }
 
@@ -47,7 +47,7 @@ type Quorum =
 type QuorumContractCall<'T> =
     { Quorum: Quorum
       Signature: string
-      SignerAddress : string
+      SignerAddress: string
       Parameters: 'T }
 
 type ErcMint<'T> =
@@ -61,10 +61,10 @@ type LockingContractCall<'T> =
       Signature: string
       Parameters: 'T }
 
-type ObservedFact = 
-  | Burn
-  | MintingError
-  | ExecutionFailure
+type ObservedFact =
+    | Burn
+    | MintingError
+    | ExecutionFailure
 
 type ErcUnwrap<'T> =
     { Level: bigint
@@ -83,32 +83,36 @@ type Erc721UnwrapParameters =
       ERC721: string
       OperationId: string }
 
-type ChangePaymentAddressParameters = 
-  {
-    Address: TezosAddress.T
-    Counter: uint64
-  }
+type ChangePaymentAddressParameters =
+    { Address: TezosAddress.T
+      Counter: uint64 }
 
-type Erc20MintingError = {
-    ERC20: string
-    Owner: string
-    Amount: bigint
-}
+type AddNftParameters =
+    { EthContract: string
+      TezosContract: string }
 
-type Erc721MintingError = {
-    ERC721: string
-    Owner: string
-    TokenId: bigint
-}
+type AddFungibleTokenParameters =
+    { EthContract: string
+      TezosContract: string
+      TokenId: uint }
 
-type ErcMintError<'t> = {
-    Level: bigint
-    TransactionHash: string
-    SignerAddress : string
-    EventId: EthEventId
-    Reason: string
-    Payload: 't
-}
+type Erc20MintingError =
+    { ERC20: string
+      Owner: string
+      Amount: bigint }
+
+type Erc721MintingError =
+    { ERC721: string
+      Owner: string
+      TokenId: bigint }
+
+type ErcMintError<'t> =
+    { Level: bigint
+      TransactionHash: string
+      SignerAddress: string
+      EventId: EthEventId
+      Reason: string
+      Payload: 't }
 
 type DomainEvent =
     | Noop

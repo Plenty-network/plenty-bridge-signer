@@ -5,8 +5,6 @@ open Nichelson.Contract
 open Nichelson.Contract.Arg
 open Signer
 
-
-
 [<RequireQualifiedAccess>]
 module Multisig =
 
@@ -90,14 +88,72 @@ module Multisig =
             Ok(Encoder.pack value)
         with err -> Error err.Message
 
+    let packAddNft
+        ({ QuorumContract = multisig
+           MinterContract = benderContract
+           ChainId = chainId })
+        ({ EthContract = ethContract
+           TezosContract = tezosContract })
+        =
+        try
+            let addNft =
+                Record [ ("%eth_contract", StringArg ethContract)
+                         ("%token_contract", StringArg tezosContract) ]
+
+            let value =
+                minterPayloadType.Instantiate(
+                    Tuple [ StringArg chainId
+                            AddressArg multisig
+                            Record [ ("%add_nft", addNft) ]
+                            AddressArg benderContract ]
+                )
+
+            Ok(Encoder.pack value)
+        with err -> Error err.Message
+
+
+    let packAddFungibleToken
+        ({ QuorumContract = multisig
+           MinterContract = benderContract
+           ChainId = chainId })
+        ({ EthContract = ethContract
+           TezosContract = tezosContract
+           TokenId = tokenId })
+        =
+        try
+            let addNft =
+                Tuple [ StringArg ethContract
+                        StringArg tezosContract
+                        IntArg(bigint tokenId) ]
+
+            let value =
+                minterPayloadType.Instantiate(
+                    Tuple [ StringArg chainId
+                            AddressArg multisig
+                            Record [ ("%add_fungible_token", addNft) ]
+                            AddressArg benderContract ]
+                )
+
+            Ok(Encoder.pack value)
+        with err -> Error err.Message
+
+
     let packChangePaymentAddress
         { QuorumContract = multisig
           MinterContract = benderContract
           ChainId = chainId }
         { Address = address; Counter = counter }
         =
-        try 
-            let payload = Tuple [StringArg chainId ; AddressArg multisig ; IntArg (bigint counter) ; AddressArg benderContract ; AddressArg address]
-            let value = paymentAddressPayloadType.Instantiate payload
-            Ok (Encoder.pack value)
+        try
+            let payload =
+                Tuple [ StringArg chainId
+                        AddressArg multisig
+                        IntArg(bigint counter)
+                        AddressArg benderContract
+                        AddressArg address ]
+
+            let value =
+                paymentAddressPayloadType.Instantiate payload
+
+            Ok(Encoder.pack value)
         with err -> Error err.Message

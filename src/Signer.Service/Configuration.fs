@@ -12,6 +12,7 @@ open Netezos.Rpc
 open Nethereum.Signer
 open Nethereum.Web3
 open Nichelson
+open Signer.AddToken
 open Signer.Ethereum
 open Signer.EventStore
 open Signer.IPFS
@@ -201,6 +202,22 @@ type IServiceCollection with
 
         this
 
+    member this.AddAddTokenWorkflow() =
+        let createAddTokenWorkflow (s: IServiceProvider) =
+            let signer = s.GetService<TezosSigner>()
+            let configuration = s.GetService<TezosConfiguration>()
+
+            let target =
+                { QuorumContract = TezosAddress.FromStringUnsafe configuration.QuorumContract
+                  MinterContract = TezosAddress.FromStringUnsafe configuration.MinterContract
+                  ChainId = configuration.Node.ChainId }
+
+            AddToken.workflow signer target :> obj
+
+        this.Add(ServiceDescriptor(typeof<AddTokenWorkflow>, createAddTokenWorkflow, ServiceLifetime.Singleton))
+
+        this
+    
     member this.AddMinterWorkflow() =
         let createMinterWorkflow (s: IServiceProvider) =
             let signer = s.GetService<TezosSigner>()
@@ -259,16 +276,18 @@ type IServiceCollection with
         let createCommandBus (s: IServiceProvider) =
             let minterWorkflow = s.GetService<MinterWorkflow>()
             let unwrapWorkflow = s.GetService<UnwrapWorkflow>()
+            let addTokenWorkflow = s.GetService<AddTokenWorkflow>()
 
             let paymentWorkflow =
                 s.GetService<ChangePaymentAddressWorkflow>()
 
             let eventStore = s.GetService<EventStoreIpfs>()
-            CommandBus.build minterWorkflow unwrapWorkflow paymentWorkflow eventStore.Append :> obj
+            CommandBus.build minterWorkflow unwrapWorkflow paymentWorkflow addTokenWorkflow eventStore.Append :> obj
 
         this
             .AddMinterWorkflow()
             .AddUnwrapWorkflow()
+            .AddAddTokenWorkflow()
             .AddPaymentAddressWorkflow()
             .Add(ServiceDescriptor(typeof<ICommandBus>, createCommandBus, ServiceLifetime.Singleton))
 

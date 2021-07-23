@@ -5,6 +5,7 @@ open Signer.Ethereum
 open Signer.Minting
 open Signer.PaymentAddress
 open Signer.Unwrap
+open Signer.AddToken
 
 
 type Reply<'v>(replyf: 'v -> unit) =
@@ -15,6 +16,7 @@ type SignerCommand =
     | Unwrap of (bigint * UnwrapCommand)
     | Minting of EthEventLog
     | PaymentAddress of (ChangePaymentAddressParameters * Reply<ChangePaymentAddressCall>)
+    | AddToken of (AddToken * Reply<string>)
 
 
 type ICommandBus =
@@ -30,6 +32,7 @@ module CommandBus =
         (minter: MinterWorkflow)
         (unwrap: UnwrapWorkflow)
         (paymentAddress: ChangePaymentAddressWorkflow)
+        (addToken: AddTokenWorkflow)
         (append: _ Append)
         =
 
@@ -39,6 +42,13 @@ module CommandBus =
             | Minting l -> minter l
             | PaymentAddress (p, rc) ->
                 paymentAddress p
+                |> AsyncResult.map
+                    (fun r ->
+                        rc.Reply r
+                        r)
+                |> AsyncResult.map (fun _ -> Noop)
+            | AddToken (p, rc) ->
+                addToken p
                 |> AsyncResult.map
                     (fun r ->
                         rc.Reply r
