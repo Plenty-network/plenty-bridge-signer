@@ -1,13 +1,27 @@
 module Signer.Minting
 
+open System
+open Netezos.Encoding
 open Nethereum.RPC.Eth.DTOs
 open Nichelson
 open Signer.Ethereum
 open Signer.Ethereum.Contract
 open Signer.Tezos
 
+let private toTezosAddress value =    
+    TezosAddress.FromString value
+    |> Result.bind
+           (fun addr ->
+                try 
+                    Base58.Parse(value) |> ignore
+                    Ok addr
+                with
+                    | :? FormatException -> Error "Bad tezos address"
+           )
+     
+
 let erc20Params (dto: ERC20WrapAskedEventDto) (log: FilterLog) =
-    TezosAddress.FromString dto.TezosAddress
+    toTezosAddress dto.TezosAddress
     |> Result.map
         (fun v ->
             { Erc20 = dto.Token
@@ -18,7 +32,7 @@ let erc20Params (dto: ERC20WrapAskedEventDto) (log: FilterLog) =
                     LogIndex = log.LogIndex.Value } })
 
 let erc721Params (dto: ERC721WrapAskedEventDto) (log: FilterLog) =
-    TezosAddress.FromString dto.TezosAddress
+    toTezosAddress dto.TezosAddress
     |> Result.map
         (fun v ->
             { TokenId = dto.TokenId
@@ -83,7 +97,6 @@ let erc20Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto: 
 
 
 let erc721Workflow (signer: TezosSigner) (quorum: Quorum) (log: FilterLog) (dto: ERC721WrapAskedEventDto) =
-
     let signErc721Minting (parameters: Erc721MintingParameters) =
         asyncResult {
             let! packed =
