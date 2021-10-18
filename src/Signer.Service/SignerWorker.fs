@@ -45,15 +45,15 @@ type SignerWorker(logger: ILogger<SignerWorker>,
         | Some (Cid value) -> logger.LogInformation("At Head {head}", value)
         | None -> logger.LogInformation("Starting from scratch")
 
-    let catch =
+    let catch (workerName:string) =
         function
         | Choice2Of2 v ->
-            logger.LogError("Error in worker {err}", v.ToString())
+            logger.LogError("Error in worker {workerName} {err}", workerName, v.ToString())
             Environment.ExitCode <- 1
             lifeTime.StopApplication()
             Async.retn ()
         | _ ->
-            logger.LogInformation("Worker gracefully shutdown")
+            logger.LogInformation("Worker {workerName} gracefully shutdown", workerName)
             Async.retn ()
 
 
@@ -72,13 +72,13 @@ type SignerWorker(logger: ILogger<SignerWorker>,
                 logger.LogInformation("All checks are green")
                 eventStore.Publish() |> Async.Start
                 let minterWork =
-                    minter.Work() |> Async.Catch |> Async.bind catch
+                    minter.Work() |> Async.Catch |> Async.bind (catch "Minter")
 
                 let unwrapWork =
-                    unwrap.Work() |> Async.Catch |> Async.bind catch
+                    unwrap.Work() |> Async.Catch |> Async.bind (catch "Unwrap")
                     
                 let transactionFailureWork =
-                    transactionFailure.Work() |> Async.Catch |> Async.bind catch
+                    transactionFailure.Work() |> Async.Catch |> Async.bind (catch "TransactionFailure")
 
                 minterTask <- Some(Async.StartAsTask(minterWork, cancellationToken = cancelToken.Token))
                 unwrapTask <- Some(Async.StartAsTask(unwrapWork, cancellationToken = cancelToken.Token))
