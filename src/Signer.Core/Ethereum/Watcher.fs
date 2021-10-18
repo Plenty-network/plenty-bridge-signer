@@ -169,7 +169,7 @@ module Watcher =
 
 
         let exec (event: _ Nethereum.Contracts.Event) (filter: NewFilterInput) =
-            event.GetAllChanges filter
+            event.GetAllChangesAsync filter
             |> Async.AwaitTask
             |> Async.map toTransferCalls
             |> Async.bind (fun e -> async { return! e })
@@ -209,7 +209,7 @@ module Watcher =
 
 
         let exec (event: _ Nethereum.Contracts.Event) (filter: NewFilterInput) (ctor: _ -> EthEvent) =
-            event.GetAllChanges filter
+            event.GetAllChangesAsync filter
             |> Async.AwaitTask
             |> Async.map
                 (fun events ->
