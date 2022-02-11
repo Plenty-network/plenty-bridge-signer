@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>Signer.Core</name></assembly>
+<members>
+<member name="T:AsyncResultComputationExpression">
+<summary>
+ The `asyncResult` computation expression is available globally without qualification
+</summary>
+</member>
+<member name="M:AsyncResult.ofAsync``2(Microsoft.FSharp.Control.FSharpAsync{``0})">
+<summary>
+ Lift a Async into an AsyncResult
+</summary>
+</member>
+<member name="M:AsyncResult.ofResult``2(Microsoft.FSharp.Core.FSharpResult{``0,``1})">
+<summary>
+ Lift a Result into an AsyncResult
+</summary>
+</member>
+<member name="M:AsyncResult.ofError``2(``0)">
+<summary>
+ Lift a value into an Error inside a AsyncResult
+</summary>
+</member>
+<member name="M:AsyncResult.ofSuccess``2(``0)">
+<summary>
+ Lift a value into an Ok inside a AsyncResult
+</summary>
+</member>
+<member name="M:AsyncResult.sequenceA``2(Microsoft.FSharp.Collections.FSharpList{Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{``0,Microsoft.FSharp.Collections.FSharpList{``1}}}})">
+<summary>
+ Convert a list of AsyncResult into a AsyncResult&lt;list&gt; using applicative style.
+ All the errors are returned. The error type must be a list.
+</summary>
+</member>
+<member name="M:AsyncResult.sequenceM``2(Microsoft.FSharp.Collections.FSharpList{Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{``0,``1}}})">
+<summary>
+ Convert a list of AsyncResult into a AsyncResult&lt;list&gt; using monadic style.
+ Only the first error is returned. The error type need not be a list.
+</summary>
+</member>
+<member name="M:AsyncResult.bind``3(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{``1,``2}}},Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{``0,``2}})">
+<summary>
+ Apply a monadic function to an AsyncResult value
+</summary>
+</member>
+<member name="M:AsyncResult.applyA``3(Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{Microsoft.FSharp.Core.FSharpFunc{``0,``1},Microsoft.FSharp.Collections.FSharpList{``2}}},Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{``0,Microsoft.FSharp.Collections.FSharpList{``2}}})">
+<summary>
+ Apply an AsyncResult function to an AsyncResult value, applicatively
+</summary>
+</member>
+<member name="M:AsyncResult.applyM``3(Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{Microsoft.FSharp.Core.FSharpFunc{``0,``1},``2}},Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{``0,``2}})">
+<summary>
+ Apply an AsyncResult function to an AsyncResult value, monadically
+</summary>
+</member>
+<member name="M:AsyncResult.catch``2(Microsoft.FSharp.Core.FSharpFunc{System.Exception,``0},Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{``1,``0}})">
+<summary>
+ Handles asynchronous exceptions and maps them into Failure cases using the provided function
+</summary>
+</member>
+<member name="M:AsyncResult.retn``2(``0)">
+<summary>
+ Lift a value to AsyncResult
+</summary>
+</member>
+<member name="M:AsyncResult.ignore``2(Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{``0,``1}})">
+<summary>
+ Apply ignore to the internal value
+</summary>
+</member>
+<member name="M:AsyncResult.mapError``3(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{``2,``0}})">
+<summary>
+ Lift a function to AsyncResult
+</summary>
+</member>
+<member name="M:AsyncResult.map``3(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpResult{``0,``2}})">
+<summary>
+ Lift a function to AsyncResult
+</summary>
+</member>
+<member name="M:Async.bind``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Control.FSharpAsync{``1}},Microsoft.FSharp.Control.FSharpAsync{``0})">
+<summary>
+ Apply a monadic function to an Async value
+</summary>
+</member>
+<member name="M:Async.apply``2(Microsoft.FSharp.Control.FSharpAsync{Microsoft.FSharp.Core.FSharpFunc{``0,``1}},Microsoft.FSharp.Control.FSharpAsync{``0})">
+<summary>
+ Apply an Async function to an Async value
+</summary>
+</member>
+<member name="M:Async.retn``1(``0)">
+<summary>
+ Lift a value to Async
+</summary>
+</member>
+<member name="M:Async.map``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Microsoft.FSharp.Control.FSharpAsync{``0})">
+<summary>
+ Lift a function to Async
+</summary>
+</member>
+<member name="M:Validation.apply``3(Microsoft.FSharp.Core.FSharpResult{Microsoft.FSharp.Core.FSharpFunc{``0,``1},Microsoft.FSharp.Collections.FSharpList{``2}},Microsoft.FSharp.Core.FSharpResult{``0,Microsoft.FSharp.Collections.FSharpList{``2}})">
+<summary>
+ Apply a Validation&lt;fn&gt; to a Validation&lt;x&gt; applicatively
+</summary>
+</member>
+<member name="T:Validation">
+<summary>
+ Functions for the `Validation` type (mostly applicative)
+</summary>
+</member>
+<member name="M:Result.toErrorOption``2(Microsoft.FSharp.Core.FSharpResult{``0,``1})">
+<summary>
+ Convert the Error case into an Option
+ (useful with List.choose to find all errors in a list of Results)
+</summary>
+</member>
+<member name="M:Result.toOption``2(Microsoft.FSharp.Core.FSharpResult{``0,``1})">
+<summary>
+ Convert a Result into an Option
+</summary>
+</member>
+<member name="M:Result.ofOption``2(``0,Microsoft.FSharp.Core.FSharpOption{``1})">
+<summary>
+ Convert an Option into a Result. If none, use the passed-in errorValue
+</summary>
+</member>
+<member name="M:Result.bindOption``3(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpResult{``1,``2}},Microsoft.FSharp.Core.FSharpOption{``0})">
+<summary>
+ Apply a monadic function to an Result&lt;x option&gt;
+</summary>
+</member>
+<member name="M:Result.ifError``2(``0,Microsoft.FSharp.Core.FSharpResult{``0,``1})">
+<summary>
+ On success, return the value. On error, return a default value
+</summary>
+</member>
+<member name="M:Result.filter``2(Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean},Microsoft.FSharp.Core.FSharpResult{``0,``1})">
+<summary>
+ Lift a given predicate into a predicate that works on Results
+</summary>
+</member>
+<member name="M:Result.isError``2(Microsoft.FSharp.Core.FSharpResult{``0,``1})">
+<summary>
+ Predicate that returns true on failure
+</summary>
+</member>
+<member name="M:Result.isOk``2(Microsoft.FSharp.Core.FSharpResult{``0,``1})">
+<summary>
+ Predicate that returns true on success
+</summary>
+</member>
+<member name="M:Result.bind3``5(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Core.FSharpResult{``3,``4}}}},Microsoft.FSharp.Core.FSharpResult{``0,``4},Microsoft.FSharp.Core.FSharpResult{``1,``4},Microsoft.FSharp.Core.FSharpResult{``2,``4})">
+<summary>
+ Apply a monadic function with three parameters
+</summary>
+</member>
+<member name="M:Result.bind2``4(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpResult{``2,``3}}},Microsoft.FSharp.Core.FSharpResult{``0,``3},Microsoft.FSharp.Core.FSharpResult{``1,``3})">
+<summary>
+ Apply a monadic function with two parameters
+</summary>
+</member>
+<member name="M:Result.lift4``6(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Core.FSharpFunc{``3,``4}}}},Microsoft.FSharp.Core.FSharpResult{``0,``5},Microsoft.FSharp.Core.FSharpResult{``1,``5},Microsoft.FSharp.Core.FSharpResult{``2,``5},Microsoft.FSharp.Core.FSharpResult{``3,``5})">
+<summary>
+ Lift a four parameter function to use Result parameters
+</summary>
+</member>
+<member name="M:Result.lift3``5(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,``3}}},Microsoft.FSharp.Core.FSharpResult{``0,``4},Microsoft.FSharp.Core.FSharpResult{``1,``4},Microsoft.FSharp.Core.FSharpResult{``2,``4})">
+<summary>
+ Lift a three parameter function to use Result parameters
+</summary>
+</member>
+<member name="M:Result.lift2``4(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,``2}},Microsoft.FSharp.Core.FSharpResult{``0,``3},Microsoft.FSharp.Core.FSharpResult{``1,``3})">
+<summary>
+ Lift a two parameter function to use Result parameters
+</summary>
+</member>
+<member name="M:Result.apply``3(Microsoft.FSharp.Core.FSharpResult{Microsoft.FSharp.Core.FSharpFunc{``0,``1},``2},Microsoft.FSharp.Core.FSharpResult{``0,``2})">
+<summary>
+ Apply a Result&lt;fn&gt; to a Result&lt;x&gt; monadically
+</summary>
+</member>
+<member name="M:Result.bimap``3(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``2,``1},Microsoft.FSharp.Core.FSharpResult{``0,``2})">
+<summary>
+ Pass in a function to handle each case of `Result`
+</summary>
+</member>
+<member name="T:Result">
+<summary>
+ Functions for Result type (functor and monad).
+ For applicatives, see Validation.
+</summary>
+</member>
+</members>
+</doc>
